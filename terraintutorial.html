@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Terrain Generator</title>
+</head>
+<body>
+	<script src = "p5.js"></script>
+	<script src = "sketch.js"></script>
+	<script type="text/javascript">
+		var terrainValues = [];
+		var multiplier = 100;
+		var xoff = 0;
+		var yoff = 0;
+		var inc = 0.1;
+
+		var tileSize = 5;
+
+		let groundShader;
+
+		function preload(){
+			groundShader = loadShader('shader.vert', 'shader.frag');
+		}
+
+		function setup(){
+			createCanvas(1000, 1000, WEBGL);
+			angleMode(DEGREES);
+			
+			camera(300,0,-100,0,0,0,65,0,65);
+
+			for(var y = 0; y < 300; y++) {
+				terrainValues.push([]);
+				xoff = 0;
+				for(var x = 0; x < 300; x++){
+					terrainValues[y][x] = map(noise(xoff, yoff), 0, 1, -multiplier, multiplier);
+					xoff = xoff + inc;
+				}
+				yoff = yoff + inc;
+			}
+		}
+
+		function draw() {
+			background(0);
+			
+			noStroke();
+
+			//stroke(255);
+			//strokeWeight(0.5);
+		
+			shader(theShader);
+
+			lights();
+			directionalLight(128, 128, 128, 0, 0, -1);
+			//rotateX(65);
+			translate(-width/2, -height/2);
+			for(var y = 0; y < 299; y++) {
+				for(var x = 0; x < 299; x++) {
+					beginShape(TRIANGLES);
+					//shininess(15);
+  					//specularMaterial(250);
+					fill(0,0,200);
+
+					vertex(x * tileSize, y * tileSize, terrainValues[y][x]);
+					vertex(x * tileSize, (y + 1) * tileSize, terrainValues[y+1][x]);
+					vertex((x+1) * tileSize, (y + 1) * tileSize, terrainValues[y+1][x+1]);
+					
+					vertex(x * tileSize, y * tileSize, terrainValues[y][x]);
+					vertex((x+1) * tileSize, y * tileSize, terrainValues[y][x+1]);
+					vertex((x+1) * tileSize, (y + 1) * tileSize, terrainValues[y+1][x+1]);
+					endShape();
+				}
+			}
+			
+		}
+
+
+	</script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
