@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Flow Field</title>
+</head>
+<body>
+    <script src = "p5.js"></script>
+    <script src = "sketch.js"></script>
+    <script type="text/javascript">
+        var left_x;
+        var right_x;
+        var top_y;
+        var bottom_y;
+
+        var resolution;
+        var num_columns;
+        var num_rows;
+        var grid;
+        var default_angle;
+
+        function roundAngleTo(angle, multiple) {
+            return round(angle/multiple)*multiple;
+        }
+
+        function checkProximity(x, y) {
+
+        }
+
+        function setup() {
+            createCanvas(800, 800);
+
+            left_x = parseInt(width * -0.2);
+            right_x = parseInt(width * 1.2);
+            top_y = parseInt(height * -0.2);
+            bottom_y = parseInt(height * 1.2);
+
+            resolution = parseInt(width * 0.01);
+            num_columns = (right_x - left_x) / resolution;
+            num_rows = (bottom_y - top_y) / resolution;
+            grid = [];
+            for (let i=0; i<num_columns; i++) {
+                grid.push([]);
+            }
+            default_angle = PI * 0.25;
+
+            for (let col=0; col<num_columns; col++) {
+                for (let row=0; row<num_rows; row++) {
+                    grid[col][row] = default_angle;
+                }
+            }
+
+            for (let col=0; col<num_columns; col++) {
+                for (let row=0; row<num_rows; row++) {
+                    // Processing's noise() works best when the step between
+                    // points is approximately 0.005, so scale down to that
+                    scaled_x = col * 0.05
+                    scaled_y = row * 0.05
+                    // translate the noise value to an angle (betwen 0 and 2 * PI)
+                    angle = map(noise(scaled_x, scaled_y), 0, 1, 0, 2 * PI);
+                    angle = roundAngleTo(angle, PI/4);
+                    //angle = random()*100/50*PI
+                    grid[col][row] = angle;
+                }
+            }
+        }
+
+        // function startWorker(x, y, step_length, num_steps) {
+        //     if(typeof(w) == "undefined") {
+        //         w = new Worker('localhost/~tylerweed/curveWorker.js');
+        //         w.postMessage({"args" : [x, y, grid, left_x, top_y, resolution, step_length, num_steps]})
+        //     }
+        //     w.onmessage = function(event) {
+        //         points = event.data;
+        //         console.log(points);
+        //         beginShape();
+        //         curveVertex(event.data[0].x, event.data[0].y);
+        //         for(let i=0; i<event.data.length; i++) {
+        //             curveVertex(event.data[0].x, event.data[0].y);
+        //         }
+        //         curveVertex(event.data[event.data.length-1].x, event.data[event.data.length-1].y);
+        //         endShape();
+        //         w.terminate();
+        //     };
+        // }
+
+        function draw() {
+            //translate(-width/2, -height/2, -100);
+            background(0);
+            stroke(255,255,255);
+            noFill();
+            noLoop();
+
+            var curves = 15000;
+            //translate(-width*.5, -height*.5, -500);
+
+            for (let i=0; i<curves; i+=1) {
+                strokeWeight(2)
+                stroke(random()*255,random()*255,random()*255);
+                //stroke(255)
+                var x = random()*width*1.4-width*.2;
+                var y = random()*height*1.4-height*.2;
+
+                let step_length = 1;
+                let num_steps = parseInt((random(100)+100));
+                
+                beginShape();
+                curveVertex(x, y);
+                for (let n=0; n<num_steps; n++) {
+                    x_offset = x - left_x;
+                    y_offset = y - top_y;
+                    column_index = parseInt(x_offset / resolution);
+                    row_index = parseInt(y_offset / resolution);
+                    //if checkProximity(x,y) {
+                        curveVertex(x,y);
+                    //}
+                    if (column_index>=0 && row_index>=0 && column_index<num_columns && row_index<num_rows) {
+                        grid_angle = grid[column_index][row_index];
+                        x_step = step_length * Math.cos(grid_angle);
+                        y_step = step_length * Math.sin(grid_angle);
+                        x += x_step;
+                        y += y_step;
+                    } else {
+                        break;
+                    }
+                }
+                curveVertex(x, y);
+                curveVertex(x, y);
+                endShape();
+
+                // for (let n=0; n<num_steps; n++) {
+                //     startWorker(x, y, step_length, num_steps);
+                // }
+            }
+        }
+        
+    </script>
+</body>
+</html>
+

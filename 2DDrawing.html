@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>2D Drawing</title>
+</head>
+<body>
+    <script src = "p5.js"></script>
+    <script src = "sketch.js"></script>
+    <script type="text/javascript">
+        var terrainValues = [];
+
+        let size = 6;
+
+        let xMax = 150;
+        let yMax = 150;
+        
+        let border = 1;
+
+        function setup() {
+            createCanvas(920, 920, WEBGL);
+            angleMode(DEGREES);
+
+            for(var y = 0; y < yMax; y++) {
+                terrainValues.push([]);
+                for(var x = 0; x < xMax; x++) {
+                    terrainValues[y][x] = Math.random()*2 < 1;
+                    if (x<border||y<border||x>=xMax-border||y>=yMax-border) {
+                        terrainValues[y][x] = true;
+                    }
+                }
+            }
+            smoothArray();
+            smoothArray();
+            smoothArray();
+            smoothArray();
+        }
+
+        function smoothArray() {
+            dupeArray = [];
+            for(var y = 0; y < yMax; y++) {
+                dupeArray.push([]);
+                for(var x = 0; x < xMax; x++) { 
+                    dupeArray[y][x] = terrainValues[y][x];
+                }
+            }     
+            for(var y = 0; y < yMax; y++) {
+                for(var x = 0; x < xMax; x++) {
+                    total = 0;
+                    for(var xOff=-1; xOff<=1; xOff++){
+                        for(var yOff=-1; yOff<=1; yOff++) {
+                            if (!(x+xOff < 0 || y+yOff < 0 || x+xOff >= xMax || y+yOff >= yMax)) {
+                                if (dupeArray[y+yOff][x+xOff] && (xOff != 0 || yOff != 0)) {
+                                    total++;
+                                }
+                            } else {
+                                total+=2;
+                            }
+                        }
+                    }
+                    if (total > 4) {
+                        terrainValues[y][x] = true;
+                    } else if (total < 4) {
+                        terrainValues[y][x] = false;
+                        
+                    }
+                }
+            }
+        }
+
+        function drawPixels() {
+            for(var y = 0; y < yMax; y++) {
+                for(var x = 0; x < xMax; x++) {
+                    if (terrainValues[y][x]) {
+                        xOff = -xMax/2*size-size/2
+                        yOff = -yMax/2*size-size/2
+                        triangle(x*size+xOff, y*size+yOff,
+                                x*size+size+xOff, y*size+yOff,
+                                x*size+size+xOff, y*size+size+yOff);
+                        triangle(x*size+xOff, y*size+yOff,
+                                x*size+xOff, y*size+size+yOff,
+                                x*size+size+xOff, y*size+size+yOff);
+                    }
+                }
+            }
+        }
+
+        function drawTriangleFromNodes(node1, node2, node3) {
+            triangle(node1[0], node1[1], node2[0], node2[1], node3[0], node3[1]);
+        }
+
+        function drawMarchedCubes() {
+            for(var y = 0; y < yMax-1; y++) {
+                for(var x = 0; x < xMax-1; x++) {
+                    var code = 0;
+                    if (terrainValues[y][x])
+                        code += 1;
+                    if (terrainValues[y][x+1])
+                        code += 2;
+                    if (terrainValues[y+1][x])
+                        code += 4;
+                    if (terrainValues[y+1][x+1])
+                        code += 8;
+
+                    var nodes = [[x*size, y*size],[x*size+size/2, y*size],[x*size+size, y*size],
+                                [x*size, y*size+size/2],                    [x*size+size, y*size+size/2],
+                                [x*size,y*size+size],[x*size+size/2,y*size+size],[x*size+size,y*size+size]];
+
+                    switch (code) {
+                        case 0:
+                            //Empty
+                            break;
+                        case 1:
+                            drawTriangleFromNodes(nodes[0],nodes[1],nodes[3]);
+                            break;
+                        case 2:
+                            drawTriangleFromNodes(nodes[1],nodes[2],nodes[4]);
+                            break;
+                        case 3:
+                            drawTriangleFromNodes(nodes[0],nodes[2],nodes[4]);
+                            drawTriangleFromNodes(nodes[0],nodes[4],nodes[3]);
+                            break;
+                        case 4:
+                            drawTriangleFromNodes(nodes[3],nodes[6],nodes[5]);
+                            break;
+                        case 5:
+                            drawTriangleFromNodes(nodes[0],nodes[1],nodes[6]);
+                            drawTriangleFromNodes(nodes[0],nodes[6],nodes[5]);
+                            break;
+                        case 6:
+                            drawTriangleFromNodes(nodes[1],nodes[2],nodes[4]);
+                            drawTriangleFromNodes(nodes[1],nodes[4],nodes[6]);
+                            drawTriangleFromNodes(nodes[1],nodes[6],nodes[5]);
+                            drawTriangleFromNodes(nodes[1],nodes[5],nodes[3]);
+                            break;
+                        case 7:
+                            drawTriangleFromNodes(nodes[0],nodes[2],nodes[4]);
+                            drawTriangleFromNodes(nodes[0],nodes[4],nodes[6]);
+                            drawTriangleFromNodes(nodes[0],nodes[6],nodes[5]);
+                            break;
+                        case 8:
+                            drawTriangleFromNodes(nodes[4],nodes[7],nodes[6]);
+                            break;
+                        case 9:
+                            drawTriangleFromNodes(nodes[0],nodes[1],nodes[4]);
+                            drawTriangleFromNodes(nodes[0],nodes[4],nodes[7]);
+                            drawTriangleFromNodes(nodes[0],nodes[7],nodes[6]);
+                            drawTriangleFromNodes(nodes[0],nodes[6],nodes[3]);
+                            break;
+                        case 10:
+                            drawTriangleFromNodes(nodes[1],nodes[2],nodes[7]);
+                            drawTriangleFromNodes(nodes[1],nodes[7],nodes[6]);
+                            break;
+                        case 11:
+                            drawTriangleFromNodes(nodes[0],nodes[2],nodes[7]);
+                            drawTriangleFromNodes(nodes[0],nodes[7],nodes[6]);
+                            drawTriangleFromNodes(nodes[0],nodes[6],nodes[3]);
+                            break;
+                        case 12:
+                            drawTriangleFromNodes(nodes[3],nodes[4],nodes[7]);
+                            drawTriangleFromNodes(nodes[3],nodes[7],nodes[5]);
+                            break;
+                        case 13:
+                            drawTriangleFromNodes(nodes[0],nodes[1],nodes[5]);
+                            drawTriangleFromNodes(nodes[1],nodes[4],nodes[5]);
+                            drawTriangleFromNodes(nodes[4],nodes[7],nodes[5]);
+                            break;
+                        case 14:
+                            drawTriangleFromNodes(nodes[1],nodes[2],nodes[7]);
+                            drawTriangleFromNodes(nodes[1],nodes[7],nodes[3]);
+                            drawTriangleFromNodes(nodes[3],nodes[7],nodes[5]);
+                            break;
+                        case 15:
+                            drawTriangleFromNodes(nodes[0],nodes[5],nodes[7]);
+                            drawTriangleFromNodes(nodes[0],nodes[2],nodes[7]);
+                            break;
+                    }
+                }
+            }
+        }
+
+        function draw() {
+            background(0);
+            
+            stroke(255);
+            strokeWeight(0.5);
+
+            noStroke();
+
+            translate(-xMax/2*size, -yMax/2*size, -100);
+
+            lights();
+            directionalLight(128, 128, 128, 0, 0, -1);
+            
+            fill(255,0,0);
+            drawMarchedCubes();
+            
+            //fill(0,0,255,100);
+            //drawPixels();
+        }
+
+
+    </script>
+</body>
+</html>

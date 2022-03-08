@@ -17,25 +17,28 @@
 
 		let groundShader;
 
-		function preload(){
-			groundShader = loadShader('shader.vert', 'shader.frag');
-		}
+		let units = 100;
+		let maxValue = 0;
 
 		function setup(){
 			createCanvas(1000, 1000, WEBGL);
 			angleMode(DEGREES);
 			
-			camera(300,0,-100,0,0,0,65,0,65);
-
-			for(var y = 0; y < 300; y++) {
+			for(var y = 0; y < units; y++) {
 				terrainValues.push([]);
 				xoff = 0;
-				for(var x = 0; x < 300; x++){
-					terrainValues[y][x] = map(noise(xoff, yoff), 0, 1, -multiplier, multiplier);
+				for(var x = 0; x < units; x++){
+					terrainValues[y][x] = map(noise(xoff, yoff), 0, 4, -10, 10);
+					terrainValues[y][x] += map(noise(xoff, yoff), 0, 2, -25, 25);
+					terrainValues[y][x] += map(noise(xoff, yoff), 0, 1, -50, 50);
+					if (terrainValues[y][x] > maxValue) {
+						maxValue = terrainValues[y][x];
+					}
 					xoff = xoff + inc;
 				}
 				yoff = yoff + inc;
 			}
+
 		}
 
 		function draw() {
@@ -46,18 +49,18 @@
 			//stroke(255);
 			//strokeWeight(0.5);
 		
-			shader(theShader);
-
 			lights();
 			directionalLight(128, 128, 128, 0, 0, -1);
-			//rotateX(65);
-			translate(-width/2, -height/2);
-			for(var y = 0; y < 299; y++) {
-				for(var x = 0; x < 299; x++) {
+			
+			translate(-units*tileSize/2, -100, -units*tileSize/2);
+			rotateX(65);
+			
+			for(var y = 0; y < units-1; y++) {
+				for(var x = 0; x < units-1; x++) {
 					beginShape(TRIANGLES);
 					//shininess(15);
   					//specularMaterial(250);
-					fill(0,0,200);
+					fill(0,0,55*terrainValues[y][x]/maxValue+200);
 
 					vertex(x * tileSize, y * tileSize, terrainValues[y][x]);
 					vertex(x * tileSize, (y + 1) * tileSize, terrainValues[y+1][x]);
