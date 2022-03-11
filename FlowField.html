@@ -103,7 +103,7 @@
                 strokeWeight(1)
                 stroke(random()*255,random()*255,random()*255);
                 beginShape();
-                curveVertex(e.data[0].x, e.data.y);
+                curveVertex(e.data[0].x, e.data[0].y);
                 for(let i=0; i<e.data.length; i++) {
                     curveVertex(e.data[i].x, e.data[i].y);
                 }
