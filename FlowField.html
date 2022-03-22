@@ -31,7 +31,38 @@
         }
         self.postMessage(points);
     };
-    // Rest of your worker code goes here.
+    </script>
+    <script id="multi_curve_worker" type="javascript/worker">
+        // This script won't be parsed by JS engines because its type is javascript/worker.
+        self.onmessage = function(e) {
+            [x_list, y_list, grid, left_x, top_y, resolution, step_length_list, num_steps_list, num_columns, num_rows] = e.data.args;
+            curves = [];
+            for (var i=0; i<x_list.length; i++) {
+                x = x_list[i];
+                y = y_list[i];
+                step_length = step_length_list[i];
+                num_steps = num_steps_list[i];
+                points = [];
+                for (let n=0; n<num_steps; n++) {
+                    x_offset = x - left_x;
+                    y_offset = y - top_y;
+                    column_index = parseInt(x_offset / resolution);
+                    row_index = parseInt(y_offset / resolution);
+                    points.push({'x' : x, 'y' : y});
+                    if (column_index>=0 && row_index>=0 && column_index<num_columns && row_index<num_rows) {
+                        grid_angle = grid[column_index][row_index];
+                        x_step = step_length * Math.cos(grid_angle);
+                        y_step = step_length * Math.sin(grid_angle);
+                        x += x_step;
+                        y += y_step;
+                    } else {
+                        break;
+                    }
+                }
+                curves.push(points);
+            }
+            self.postMessage(curves);
+        };
     </script>
     <script type="text/javascript">
         var left_x;
@@ -45,6 +76,8 @@
         var grid;
         var default_angle;
 
+        var curvesDrawn = 0;
+
         function roundAngleTo(angle, multiple) {
             return round(angle/multiple)*multiple;
         }
@@ -52,6 +85,60 @@
         function checkProximity(x, y) {
 
         }
+
+
+        // Where each worker is a curve
+        function startWorker(x, y, step_length, num_steps) {
+            var blob = new Blob([
+                document.querySelector('#worker1').textContent
+            ], { type: "text/javascript" })
+
+            // Note: window.webkitURL.createObjectURL() in Chrome 10+.
+            var w = new Worker(window.URL.createObjectURL(blob));
+            w.onmessage = function(e) {
+                points = e.data;
+                strokeWeight(1)
+                stroke(random()*255,random()*255,random()*255);
+                beginShape();
+                curveVertex(points[0].x, points[0].y);
+                for(let i=0; i<points.length; i++) {
+                    curveVertex(points[i].x, points[i].y);
+                }
+                curveVertex(points[points.length-1].x, points[points.length-1].y);
+                endShape();
+                w.terminate();
+            };
+            w.postMessage({"args" : [x, y, grid, left_x, top_y, resolution, step_length, num_steps, num_columns, num_rows]})
+        }
+
+        // Where worker is sent lists of curves
+        function getWorker() {
+            var blob = new Blob([
+                document.querySelector('#multi_curve_worker').textContent
+            ], { type: "text/javascript" })
+
+            // Note: window.webkitURL.createObjectURL() in Chrome 10+.
+            var w = new Worker(window.URL.createObjectURL(blob));
+            w.onmessage = function(e) {
+                curves = e.data;
+                for (let n=0; n<e.data.length; n++) {
+                    points = e.data[n];
+                    strokeWeight(1);
+                    stroke(random()*255,random()*255,random()*255);
+                    stroke(255);
+                    beginShape();
+                    curveVertex(points[0].x, points[0].y);
+                    for(let i=0; i<points.length; i++) {
+                        curveVertex(points[i].x, points[i].y);
+                    }
+                    curveVertex(points[points.length-1].x, points[points.length-1].y);
+                    endShape();
+                    w.terminate();
+                }
+            };
+            return w;
+        }
+
 
         function setup() {
             createCanvas(800, 800);
@@ -76,8 +163,8 @@
                 }
             }
 
-            for (let col=0; col<num_columns; col++) {
-                for (let row=0; row<num_rows; row++) {
+            for (let row=0; row<num_rows; row++) {    
+                for (let col=0; col<num_columns; col++) {
                     // Processing's noise() works best when the step between
                     // points is approximately 0.005, so scale down to that
                     scaled_x = col * 0.05
@@ -85,33 +172,18 @@
                     // translate the noise value to an angle (betwen 0 and 2 * PI)
                     angle = map(noise(scaled_x, scaled_y), 0, 1, 0, 2 * PI);
                     //angle = roundAngleTo(angle, PI/4);
-                    //angle = random()*100/50*PI
+                    //angle = random()*100/50*PI;
                     grid[col][row] = angle;
                 }
             }
         }
 
-        function startWorker(x, y, step_length, num_steps) {
-            var blob = new Blob([
-                document.querySelector('#worker1').textContent
-            ], { type: "text/javascript" })
 
-            // Note: window.webkitURL.createObjectURL() in Chrome 10+.
-            var w = new Worker(window.URL.createObjectURL(blob));
-            w.onmessage = function(e) {
-                points = e.data;
-                strokeWeight(1)
-                stroke(random()*255,random()*255,random()*255);
-                beginShape();
-                curveVertex(e.data[0].x, e.data[0].y);
-                for(let i=0; i<e.data.length; i++) {
-                    curveVertex(e.data[i].x, e.data[i].y);
-                }
-                curveVertex(e.data[e.data.length-1].x, e.data[event.data.length-1].y);
-                endShape();
-                w.terminate();
-            };
-            w.postMessage({"args" : [x, y, grid, left_x, top_y, resolution, step_length, num_steps, num_columns, num_rows]})
+        function getRandomStartCoordinates() {
+            var x = random()*width*1.4-width*.2;
+            var y = random()*height*1.4-height*.2;
+
+            return [x, y];
         }
 
         function draw() {
@@ -120,44 +192,73 @@
             noFill();
             noLoop();
 
-            var curves = 500;
+            var totalWorkers = 400;
+
+            var curves = 2000;
+            
             //translate(-width*.5, -height*.5, -500);
 
-            for (let i=0; i<curves; i+=1) {
-                var x = random()*width*1.4-width*.2;
-                var y = random()*height*1.4-height*.2;
+            // for (let i=0; i<curves; i+=1) {
+            //     var x = random()*width*1.4-width*.2;
+            //     var y = random()*height*1.4-height*.2;
 
-                let step_length = 10;
-                let num_steps = parseInt((random(100)+100));
-                
-                startWorker(x, y, step_length, num_steps);
+            //     let step_length = 10;
+            //     let num_steps = parseInt((random(100)+100));
 
-                // beginShape();
-                // curveVertex(x, y);
-                // for (let n=0; n<num_steps; n++) {
-                //     x_offset = x - left_x;
-                //     y_offset = y - top_y;
-                //     column_index = parseInt(x_offset / resolution);
-                //     row_index = parseInt(y_offset / resolution);
-                //     //if checkProximity(x,y) {
-                //         curveVertex(x,y);
-                //     //}
-                //     if (column_index>=0 && row_index>=0 && column_index<num_columns && row_index<num_rows) {
-                //         grid_angle = grid[column_index][row_index];
-                //         x_step = step_length * Math.cos(grid_angle);
-                //         y_step = step_length * Math.sin(grid_angle);
-                //         x += x_step;
-                //         y += y_step;
-                //     } else {
-                //         break;
-                //     }
-                // }
-                // curveVertex(x, y);
-                // curveVertex(x, y);
-                // endShape();
+            //     strokeWeight(2);
+            //     stroke(random()*255,random()*255,random()*255);
+            //     //stroke(255);
+            //     beginShape();
+            //     curveVertex(x, y);
+            //     for (let n=0; n<num_steps; n++) {
+            //         x_offset = x - left_x;
+            //         y_offset = y - top_y;
+            //         column_index = parseInt(x_offset / resolution);
+            //         row_index = parseInt(y_offset / resolution);
+            //         //if checkProximity(x,y) {
+            //             curveVertex(x,y);
+            //         //}
+            //         if (column_index>=0 && row_index>=0 && column_index<num_columns && row_index<num_rows) {
+            //             grid_angle = grid[column_index][row_index];
+            //             x_step = step_length * Math.cos(grid_angle);
+            //             y_step = step_length * Math.sin(grid_angle);
+            //             x += x_step;
+            //             y += y_step;
+            //         } else {
+            //             break;
+            //         }
+            //     }
+            //     curveVertex(x, y);
+            //     curveVertex(x, y);
+            //     endShape();
+            // }
+        
+            curvePerWorker = int(curves/totalWorkers);
+            for (let i=0; i<totalWorkers; i+=1) {
+                w = getWorker();
+                curvesForThisWorker = curvePerWorker;
+                if (i < curves%totalWorkers) {
+                    curvesForThisWorker++;
+                }
+
+                x_list = [];
+                y_list = [];
+                step_length_list = [];
+                num_steps_list = [];
+                for (let j=0; j<curvesForThisWorker; j+=1) {
+                    [x, y] = getRandomStartCoordinates();
+                    
+                    x_list.push(x);
+                    y_list.push(y);
+
+                    var step_length = .25;
+                    step_length_list.push(step_length);
+                    var num_steps = parseInt((random(100)+1000));
+                    num_steps_list.push(num_steps);
+                }
+                w.postMessage({"args" : [x_list, y_list, grid, left_x, top_y, resolution, step_length_list, num_steps_list, num_columns, num_rows]});
             }
         }
-        
     </script>
 </body>
 </html>
