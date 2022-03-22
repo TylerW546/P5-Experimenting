@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Color Palettes</title>
+</head>
+<body>
+    <script src = "p5.js"></script>
+    <script src = "sketch.js"></script>
+    <script type="text/javascript">
+        var colors = [];
+
+        var monoSet;
+
+        class Color {
+            constructor(H, S, L) {
+                this.hue = parseInt(H);
+                this.saturation = parseInt(S);
+                this.lightness = parseInt(L);
+            }
+
+            get values() {
+                return [this.hue, this.saturation, this.lightness]
+            }
+        }
+
+        class MonochromaticSet {
+            
+            constructor(lDiff, lMin, lMax, startingColor=new Color(random()*255, random()*100+155, random()*255)) {
+                this.colors = [];
+
+                this.startingColor = startingColor;
+                this.lDiff = lDiff;
+                this.lMin = lMin;
+                this.lMax = lMax;
+
+                let hue = startingColor.hue;
+                let sat = startingColor.saturation;
+                let startL = (startingColor.lightness-lMin)%lDiff+lMin;
+                for (let L=startL; L<lMax; L+=lDiff) {
+                    this.colors.push(new Color(hue, sat, L));
+                }
+                console.log(this.colors);
+            }
+
+            draw(yVal, xStart, xOff, radius) {
+                for (let i=0; i<this.colors.length; i++) {
+                    fill(this.colors[i].values[0], this.colors[i].values[1], this.colors[i].values[2]);
+                    circle(xStart + xOff*i, yVal, radius);
+                }
+            }
+
+            createSecondary(lDiff=this.lDiff, lMin=this.lMin, lMax=this.lMax, hOff=30) {
+                return new MonochromaticSet(lDiff, lMin, lMax, new Color((this.startingColor.hue+hOff)%360, this.startingColor.saturation, this.startingColor.lightness));
+            }
+        }
+
+        function setup(){
+            createCanvas(1000, 1000, WEBGL);
+            colorMode(HSL, 360);
+
+            colors.push(new MonochromaticSet(18, 0, 360))
+            for (let i=0; i<11; i++) {
+                colors.push(colors[colors.length-1].createSecondary())
+            }
+        }
+
+        function draw() {
+            background(0)
+
+            for (let i=0; i<colors.length; i++) {
+                colors[i].draw(-450+i*30, -450, 30, 30)
+            }
+        
+        }
+    </script>
+</body>
+</html>
