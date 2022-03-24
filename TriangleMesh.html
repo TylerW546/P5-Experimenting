@@ -9,7 +9,44 @@
     <script type="text/javascript">
         const steps = 34;
 
-        const colors = ['#003049', '#D62828', '#F77F00', '#FCBF49', '#EAE2B7'];
+        var colors = [];
+        var chosenColors = [];
+
+        class Color {
+            constructor(H, S, L) {
+                this.hue = Math.floor(H);
+                this.saturation = Math.floor(S);
+                this.lightness = Math.floor(L);
+            }
+
+            get values() {
+                return [this.hue, this.saturation, this.lightness]
+            }
+        }
+
+        class MonochromaticSet {
+            constructor(lDiff, lMin, lMax, startingColor=new Color(random()*360, random()*100+260, 720)) {
+                this.colors = [];
+
+                this.startingColor = startingColor;
+                this.lDiff = lDiff;
+                this.lMin = lMin;
+                this.lMax = lMax;
+
+                let hue = startingColor.hue;
+                let sat = startingColor.saturation;
+                let startL = (startingColor.lightness-lMin)%lDiff+lMin;
+                for (let L=startL; L<lMax; L+=lDiff) {
+                    this.colors.push(new Color(hue, sat, L));
+                }
+            }
+
+            createSecondary(lDiff=this.lDiff, lMin=this.lMin, lMax=this.lMax, hOff=30) {
+                return new MonochromaticSet(lDiff, lMin, lMax, new Color((this.startingColor.hue+hOff)%360, this.startingColor.saturation, this.startingColor.lightness));
+            }
+        }
+
+        //const colors = ['#003049', '#D62828', '#F77F00', '#FCBF49', '#EAE2B7'];
         //const colors = ['#080708', '#3772FF', '#DF2935', '#FDCA40', '#E6E8E6'];
         //const colors = ['#320E3B', '#E56399', '#7F96FF', '#7F96FF', '#DBFCFF'];
 
@@ -21,6 +58,35 @@
             strokeJoin(BEVEL);
             noLoop();
             rectMode(CENTER);
+            colorMode(HSL, 360);
+
+            colors.push(new MonochromaticSet(12, 0, 360))
+            for (let i=0; i<11; i++) {
+                colors.push(colors[colors.length-1].createSecondary())
+            }
+
+            var sets = 3;
+            var minOffSet;
+            var maxOffSet;
+
+            var colorsPerSet = 4;
+            var minOffColor = 1;
+            var maxOffColor = 3;
+
+            var setIndex = 2;
+            for (let set=0; set<sets; set++) {
+                var setList = [];
+
+                var colorIndex = 3;
+                for (let color=0; color<colorsPerSet; color++) {
+                    chosenColors.push(colors[setIndex].colors[colorIndex]);
+                    colorIndex += 5;
+                }
+
+                //chosenColors.push(setList);
+
+                setIndex += 2;
+            }
         }
 
         function draw() {
@@ -41,14 +107,16 @@
         for(let i=0; i<steps-2; i++) {
             for(let j=0; j<steps-2; j++) {
             noFill();
-            fill(colors[floor(random()*colors.length)]);
+            color = chosenColors[floor(random()*chosenColors.length)]
+            fill(color.hue, color.saturation, color.lightness);
             triangle(
                 matrix[j][i].x, matrix[j][i].y,
                 matrix[j+1][i].x, matrix[j+1][i].y,
                 matrix[j+(i%2==0?1:0)][i+1].x, matrix[j+(i%2==0?1:0)][i+1].y
             );
             
-            fill(colors[floor(random()*colors.length)]);
+            color = chosenColors[floor(random()*chosenColors.length)]
+            fill(color.hue, color.saturation, color.lightness);
                     triangle(
                         matrix[j+(i%2==1?1:0)][i].x, matrix[j+(i%2==1?1:0)][i].y,
                         matrix[j][i+1].x, matrix[j][i+1].y,

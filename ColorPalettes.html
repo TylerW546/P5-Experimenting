@@ -8,14 +8,13 @@
     <script src = "sketch.js"></script>
     <script type="text/javascript">
         var colors = [];
-
-        var monoSet;
+        var chosenColors = [];
 
         class Color {
             constructor(H, S, L) {
-                this.hue = parseInt(H);
-                this.saturation = parseInt(S);
-                this.lightness = parseInt(L);
+                this.hue = Math.floor(H);
+                this.saturation = Math.floor(S);
+                this.lightness = Math.floor(L);
             }
 
             get values() {
@@ -24,8 +23,7 @@
         }
 
         class MonochromaticSet {
-            
-            constructor(lDiff, lMin, lMax, startingColor=new Color(random()*255, random()*100+155, random()*255)) {
+            constructor(lDiff, lMin, lMax, startingColor=new Color(random()*360, random()*100+260, 720)) {
                 this.colors = [];
 
                 this.startingColor = startingColor;
@@ -39,7 +37,6 @@
                 for (let L=startL; L<lMax; L+=lDiff) {
                     this.colors.push(new Color(hue, sat, L));
                 }
-                console.log(this.colors);
             }
 
             draw(yVal, xStart, xOff, radius) {
@@ -58,9 +55,32 @@
             createCanvas(1000, 1000, WEBGL);
             colorMode(HSL, 360);
 
-            colors.push(new MonochromaticSet(18, 0, 360))
+            colors.push(new MonochromaticSet(12, 0, 360))
             for (let i=0; i<11; i++) {
                 colors.push(colors[colors.length-1].createSecondary())
+            }
+
+            var sets = 3;
+            var minOffSet;
+            var maxOffSet;
+
+            var colorsPerSet = 4;
+            var minOffColor = 1;
+            var maxOffColor = 3;
+
+            var setIndex = 2;
+            for (let set=0; set<sets; set++) {
+                var setList = [];
+
+                var colorIndex = 3;
+                for (let color=0; color<colorsPerSet; color++) {
+                    setList.push(colors[setIndex].colors[colorIndex]);
+                    colorIndex += 7;
+                }
+
+                chosenColors.push(setList);
+
+                setIndex += 4;
             }
         }
 
@@ -70,7 +90,13 @@
             for (let i=0; i<colors.length; i++) {
                 colors[i].draw(-450+i*30, -450, 30, 30)
             }
-        
+
+            for (let i=0; i<chosenColors.length; i++) {
+                for (let j=0; j<chosenColors[i].length; j++) {
+                    fill(chosenColors[i][j].hue, chosenColors[i][j].saturation, chosenColors[i][j].lightness);
+                    circle(j*125-chosenColors[i].length*62+62,i*125,100);
+                }
+            }
         }
     </script>
 </body>
