@@ -16,8 +16,8 @@
         for (let n=0; n<num_steps; n++) {
             x_offset = x - left_x;
             y_offset = y - top_y;
-            column_index = parseInt(x_offset / resolution);
-            row_index = parseInt(y_offset / resolution);
+            column_index = Math.floor(x_offset / resolution);
+            row_index = Math.floor(y_offset / resolution);
             points.push({'x' : x, 'y' : y});
             if (column_index>=0 && row_index>=0 && column_index<num_columns && row_index<num_rows) {
                 grid_angle = grid[column_index][row_index];
@@ -46,8 +46,8 @@
                 for (let n=0; n<num_steps; n++) {
                     x_offset = x - left_x;
                     y_offset = y - top_y;
-                    column_index = parseInt(x_offset / resolution);
-                    row_index = parseInt(y_offset / resolution);
+                    column_index = Math.floor(x_offset / resolution);
+                    row_index = Math.floor(y_offset / resolution);
                     points.push({'x' : x, 'y' : y});
                     if (column_index>=0 && row_index>=0 && column_index<num_columns && row_index<num_rows) {
                         grid_angle = grid[column_index][row_index];
@@ -65,6 +65,45 @@
         };
     </script>
     <script type="text/javascript">
+        var colors = [];
+        var chosen_colors = [];
+
+        class Color {
+            constructor(H, S, L) {
+                this.hue = Math.floor(H);
+                this.saturation = Math.floor(S);
+                this.lightness = Math.floor(L);
+            }
+
+            get values() {
+                return [this.hue, this.saturation, this.lightness]
+            }
+        }
+
+        class MonochromaticSet {
+            constructor(lDiff, lMin, lMax, startingColor=new Color(random()*360, random()*100+260, 720)) {
+                this.colors = [];
+
+                this.startingColor = startingColor;
+                this.lDiff = lDiff;
+                this.lMin = lMin;
+                this.lMax = lMax;
+
+                let hue = startingColor.hue;
+                let sat = startingColor.saturation;
+                let startL = (startingColor.lightness-lMin)%lDiff+lMin;
+                for (let L=startL; L<lMax; L+=lDiff) {
+                    this.colors.push(new Color(hue, sat, L));
+                }
+            }
+
+            createSecondary(lDiff=this.lDiff, lMin=this.lMin, lMax=this.lMax, hOff=30) {
+                return new MonochromaticSet(lDiff, lMin, lMax, new Color((this.startingColor.hue+hOff)%360, this.startingColor.saturation, this.startingColor.lightness));
+            }
+        }
+        
+        var decimal_overhang = .1;
+
         var left_x;
         var right_x;
         var top_y;
@@ -123,9 +162,10 @@
                 curves = e.data;
                 for (let n=0; n<e.data.length; n++) {
                     points = e.data[n];
-                    strokeWeight(1);
-                    stroke(random()*255,random()*255,random()*255);
-                    stroke(255);
+                    strokeWeight(int(random()*5));
+                    color = chosen_colors[floor(random()*chosen_colors.length)]
+                    stroke(color.hue, color.saturation, color.lightness);
+                    
                     beginShape();
                     curveVertex(points[0].x, points[0].y);
                     for(let i=0; i<points.length; i++) {
@@ -143,12 +183,38 @@
         function setup() {
             createCanvas(800, 800);
 
-            left_x = parseInt(width * -0.2);
-            right_x = parseInt(width * 1.2);
-            top_y = parseInt(height * -0.2);
-            bottom_y = parseInt(height * 1.2);
+            colorMode(HSL, 360);
 
-            resolution = parseInt(width * 0.01);
+            colors.push(new MonochromaticSet(12, 0, 360))
+            for (let i=0; i<11; i++) {
+                colors.push(colors[colors.length-1].createSecondary())
+            }
+
+            var sets = 3;
+            var min_off_set;
+            var max_off_set;
+
+            var colors_per_set = 4;
+            var min_off_color = 1;
+            var max_off_color = 3;
+
+            var set_index = 2;
+            for (let set=0; set<sets; set++) {
+                var set_list = [];
+                var color_index = 6;
+                for (let color=0; color<colors_per_set; color++) {
+                    chosen_colors.push(colors[set_index].colors[color_index]);
+                    color_index += 4;
+                }
+                set_index += 3;
+            }
+
+            left_x = Math.floor(width * -(decimal_overhang));
+            right_x = Math.floor(width * (1+(decimal_overhang)));
+            top_y = Math.floor(height * -(decimal_overhang));
+            bottom_y = Math.floor(height * (1+(decimal_overhang)));
+
+            resolution = Math.floor(width * 0.01);
             num_columns = (right_x - left_x) / resolution;
             num_rows = (bottom_y - top_y) / resolution;
             grid = [];
@@ -167,11 +233,11 @@
                 for (let col=0; col<num_columns; col++) {
                     // Processing's noise() works best when the step between
                     // points is approximately 0.005, so scale down to that
-                    scaled_x = col * 0.05
-                    scaled_y = row * 0.05
+                    scaled_x = col * 0.025
+                    scaled_y = row * 0.025
                     // translate the noise value to an angle (betwen 0 and 2 * PI)
                     angle = map(noise(scaled_x, scaled_y), 0, 1, 0, 2 * PI);
-                    //angle = roundAngleTo(angle, PI/4);
+                    angle = roundAngleTo(angle, PI/4);
                     //angle = random()*100/50*PI;
                     grid[col][row] = angle;
                 }
@@ -179,9 +245,18 @@
         }
 
 
-        function getRandomStartCoordinates() {
-            var x = random()*width*1.4-width*.2;
-            var y = random()*height*1.4-height*.2;
+        function getStartCoordinates(curves_made, curves) {
+            //var x = random()*width*((1+(decimal_overhang*2)))-width*(decimal_overhang);
+            //var y = random()*height*((1+(decimal_overhang*2)))-height*(decimal_overhang);
+            
+            curves_per_row = Math.floor(sqrt(curves));
+            col_width = width/curves_per_row;
+            row_height = height/curves_per_row;
+            col = Math.floor(curves/curves_per_row);
+            row = curves % curves_per_row;
+
+            var x = col*col_width;
+            var y = row*row_height;
 
             return [x, y];
         }
@@ -192,18 +267,43 @@
             noFill();
             noLoop();
 
-            var totalWorkers = 400;
+            var total_workers = 450;
 
-            var curves = 2000;
-            
-            //translate(-width*.5, -height*.5, -500);
+            var curves = 4000;
+            var curves_made = 0;
 
+            curve_per_worker = int(curves/total_workers);
+            for (let i=0; i<total_workers; i+=1) {
+                w = getWorker();
+                curves_for_this_worker = curve_per_worker;
+                if (i < curves%total_workers) {
+                    curves_for_this_worker++;
+                }
+
+                x_list = [];
+                y_list = [];
+                step_length_list = [];
+                num_steps_list = [];
+                for (let j=0; j<curves_for_this_worker; j+=1) {
+                    [x, y] = getStartCoordinates(curves_made, curves);
+                    
+                    x_list.push(x);
+                    y_list.push(y);
+
+                    var step_length = 1;
+                    step_length_list.push(step_length);
+                    var num_steps = Math.floor((random(100)+500));
+                    num_steps_list.push(num_steps);
+                    curves_made += 1;
+                }
+                w.postMessage({"args" : [x_list, y_list, grid, left_x, top_y, resolution, step_length_list, num_steps_list, num_columns, num_rows]});
+            }
             // for (let i=0; i<curves; i+=1) {
             //     var x = random()*width*1.4-width*.2;
             //     var y = random()*height*1.4-height*.2;
 
             //     let step_length = 10;
-            //     let num_steps = parseInt((random(100)+100));
+            //     let num_steps = Math.floor((random(100)+100));
 
             //     strokeWeight(2);
             //     stroke(random()*255,random()*255,random()*255);
@@ -213,8 +313,8 @@
             //     for (let n=0; n<num_steps; n++) {
             //         x_offset = x - left_x;
             //         y_offset = y - top_y;
-            //         column_index = parseInt(x_offset / resolution);
-            //         row_index = parseInt(y_offset / resolution);
+            //         column_index = Math.floor(x_offset / resolution);
+            //         row_index = Math.floor(y_offset / resolution);
             //         //if checkProximity(x,y) {
             //             curveVertex(x,y);
             //         //}
@@ -232,32 +332,6 @@
             //     curveVertex(x, y);
             //     endShape();
             // }
-        
-            curvePerWorker = int(curves/totalWorkers);
-            for (let i=0; i<totalWorkers; i+=1) {
-                w = getWorker();
-                curvesForThisWorker = curvePerWorker;
-                if (i < curves%totalWorkers) {
-                    curvesForThisWorker++;
-                }
-
-                x_list = [];
-                y_list = [];
-                step_length_list = [];
-                num_steps_list = [];
-                for (let j=0; j<curvesForThisWorker; j+=1) {
-                    [x, y] = getRandomStartCoordinates();
-                    
-                    x_list.push(x);
-                    y_list.push(y);
-
-                    var step_length = .25;
-                    step_length_list.push(step_length);
-                    var num_steps = parseInt((random(100)+1000));
-                    num_steps_list.push(num_steps);
-                }
-                w.postMessage({"args" : [x_list, y_list, grid, left_x, top_y, resolution, step_length_list, num_steps_list, num_columns, num_rows]});
-            }
         }
     </script>
 </body>
