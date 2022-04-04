@@ -10,8 +10,7 @@
     <!DOCTYPE html>
     <script id="multi_curve_worker" type="javascript/worker">
         self.onmessage = function(e) {
-            [x_list, y_list, grid, left_x, top_y, resolution, step_length_list, num_steps_list, num_columns, num_rows] = e.data.args;
-            
+            [x_list, y_list, grid, left_x, top_y, resolution, step_length_list, num_steps_list, num_columns, num_rows, curves_made_before] = e.data.args;
             curves = [];
             for (var i=0; i<x_list.length; i++) {
                 x = x_list[i];
@@ -37,12 +36,14 @@
                 }
                 curves.push(points);
             }
-            self.postMessage(curves);
+            self.postMessage({"curves" : curves, "curves_made_before" : curves_made_before});
         };
     </script>
     <script type="text/javascript">
         var colors = [];
         var chosen_colors = [];
+
+        var all_curves = [];
 
         var collision_removal = true;
         var drawn_map = [];
@@ -100,8 +101,15 @@
             return round(angle/multiple)*multiple;
         }
 
-        function checkProximity(x, y, radius) {
-
+        function checkProximity(x, y, radius, minimum) {
+            for (let x_off=-radius; x_off<=radius; x_off++) {
+                for (let y_off=-radius; y_off<=radius; y_off++) {
+                    if (drawn_map[y+y_off][x+x_off] > 0) {
+                        return true;
+                    }
+                }
+            }
+            return false;
         }
 
         // Where worker is sent lists of curves
@@ -113,9 +121,11 @@
             // Note: window.webkitURL.createObjectURL() in Chrome 10+.
             var w = new Worker(window.URL.createObjectURL(blob));
             w.onmessage = function(e) {
-                curves = e.data;
-                for (let n=0; n<e.data.length; n++) {
-                    points = e.data[n];
+                curves = e.data.curves;
+                curves_made_before = e.data.curves_made_before;
+                
+                for (let n=0; n<curves.length; n++) {
+                    points = curves[n];
                     strokeWeight(int(random()*5));
                     color = chosen_colors[floor(random()*chosen_colors.length)]
                     stroke(color.hue, color.saturation, color.lightness);
@@ -124,8 +134,14 @@
                     curveVertex(points[0].x, points[0].y);
                     for(let i=0; i<points.length; i++) {
                         curveVertex(points[i].x, points[i].y);
+                        if (collision_removal) {
+                            if (checkProximity(Math.floor(points[i].x-left_x), Math.floor(points[i].y-top_y), 10, curves_made_before+1+n)) { //} drawn_map[Math.floor(points[i].y-top_y)][Math.floor(points[i].x-left_x)] > curves_made_before+1+n) {
+                                break;
+                            } else {
+                                drawn_map[Math.floor(points[i].y-top_y)][Math.floor(points[i].x-left_x)] = curves_made_before+1+n;
+                            }
+                        }
                     }
-                    curveVertex(points[points.length-1].x, points[points.length-1].y);
                     endShape();
                     w.terminate();
                 }
@@ -168,6 +184,14 @@
             top_y = Math.floor(height * -(decimal_overhang));
             bottom_y = Math.floor(height * (1+(decimal_overhang)));
 
+            for (let row=0; row<Math.floor(bottom_y-top_y); row++) {
+                var row_list = [];
+                for (let col=0; col<Math.floor(right_x-left_x); col++) {
+                    row_list.push(0);
+                }
+                drawn_map.push(row_list);
+            }
+
             resolution = Math.floor(width * 0.01);
             num_columns = (right_x - left_x) / resolution;
             num_rows = (bottom_y - top_y) / resolution;
@@ -187,8 +211,8 @@
                 for (let col=0; col<num_columns; col++) {
                     // Processing's noise() works best when the step between
                     // points is approximately 0.005, so scale down to that
-                    scaled_x = col * 0.025
-                    scaled_y = row * 0.025
+                    scaled_x = col * 0.005
+                    scaled_y = row * 0.005
                     // translate the noise value to an angle (betwen 0 and 2 * PI)
                     angle = map(noise(scaled_x, scaled_y), 0, 1, 0, 2 * PI);
                     //angle = roundAngleTo(angle, PI/4);
@@ -209,8 +233,8 @@
             col = Math.floor(curves_made/curves_per_row);
             row = curves_made % curves_per_row;
 
-            var x = col*col_width-decimal_overhang*width    +    Math.floor(random()*col_width-col_width/2);
-            var y = row*row_height-decimal_overhang*height    +     Math.floor(random()*row_height-col_width/2);
+            var x = col*col_width+left_x    +    Math.floor(random()*col_width-col_width/3);
+            var y = row*row_height+top_y    +    Math.floor(random()*row_height-col_width/3);
 
             return [x, y];
         }
@@ -225,6 +249,7 @@
 
             var curves = 4000;
             var curves_made = 0;
+            var curves_made_before = 0;
 
             curve_per_worker = int(curves/total_workers);
             for (let i=0; i<total_workers; i+=1) {
@@ -238,6 +263,9 @@
                 y_list = [];
                 step_length_list = [];
                 num_steps_list = [];
+
+                curves_made_before = curves_made;
+
                 for (let j=0; j<curves_for_this_worker; j+=1) {
                     [x, y] = getStartCoordinates(curves_made, curves);
                     
@@ -246,14 +274,14 @@
 
                     var step_length = 1;
                     step_length_list.push(step_length);
-                    var num_steps = Math.floor((random()*1000+500));
+                    var num_steps = Math.floor((random()*1+700));
                     num_steps_list.push(num_steps);
                     curves_made += 1;
+                    all_curves.push([]);
                 }
-                w.postMessage({"args" : [x_list, y_list, grid, left_x, top_y, resolution, step_length_list, num_steps_list, num_columns, num_rows]});
+                w.postMessage({"args" : [x_list, y_list, grid, left_x, top_y, resolution, step_length_list, num_steps_list, num_columns, num_rows, curves_made_before]});
             }
         }
     </script>
 </body>
 </html>
-
