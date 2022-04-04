@@ -8,34 +8,10 @@
     <script src = "sketch.js"></script>
 
     <!DOCTYPE html>
-    <script id="worker1" type="javascript/worker">
-    // This script won't be parsed by JS engines because its type is javascript/worker.
-    self.onmessage = function(e) {
-        [x, y, grid, left_x, top_y, resolution, step_length, num_steps, num_columns, num_rows] = e.data.args;
-        points = [];
-        for (let n=0; n<num_steps; n++) {
-            x_offset = x - left_x;
-            y_offset = y - top_y;
-            column_index = Math.floor(x_offset / resolution);
-            row_index = Math.floor(y_offset / resolution);
-            points.push({'x' : x, 'y' : y});
-            if (column_index>=0 && row_index>=0 && column_index<num_columns && row_index<num_rows) {
-                grid_angle = grid[column_index][row_index];
-                x_step = step_length * Math.cos(grid_angle);
-                y_step = step_length * Math.sin(grid_angle);
-                x += x_step;
-                y += y_step;
-            } else {
-                break;
-            }
-        }
-        self.postMessage(points);
-    };
-    </script>
     <script id="multi_curve_worker" type="javascript/worker">
-        // This script won't be parsed by JS engines because its type is javascript/worker.
         self.onmessage = function(e) {
             [x_list, y_list, grid, left_x, top_y, resolution, step_length_list, num_steps_list, num_columns, num_rows] = e.data.args;
+            
             curves = [];
             for (var i=0; i<x_list.length; i++) {
                 x = x_list[i];
@@ -67,6 +43,24 @@
     <script type="text/javascript">
         var colors = [];
         var chosen_colors = [];
+
+        var collision_removal = true;
+        var drawn_map = [];
+                
+        var decimal_overhang = .1;
+
+        var left_x;
+        var right_x;
+        var top_y;
+        var bottom_y;
+
+        var resolution;
+        var num_columns;
+        var num_rows;
+        var grid;
+        var default_angle;
+
+        var curvesDrawn = 0;
 
         class Color {
             constructor(H, S, L) {
@@ -101,53 +95,13 @@
                 return new MonochromaticSet(lDiff, lMin, lMax, new Color((this.startingColor.hue+hOff)%360, this.startingColor.saturation, this.startingColor.lightness));
             }
         }
-        
-        var decimal_overhang = .1;
-
-        var left_x;
-        var right_x;
-        var top_y;
-        var bottom_y;
-
-        var resolution;
-        var num_columns;
-        var num_rows;
-        var grid;
-        var default_angle;
-
-        var curvesDrawn = 0;
 
         function roundAngleTo(angle, multiple) {
             return round(angle/multiple)*multiple;
         }
 
-        function checkProximity(x, y) {
+        function checkProximity(x, y, radius) {
 
-        }
-
-
-        // Where each worker is a curve
-        function startWorker(x, y, step_length, num_steps) {
-            var blob = new Blob([
-                document.querySelector('#worker1').textContent
-            ], { type: "text/javascript" })
-
-            // Note: window.webkitURL.createObjectURL() in Chrome 10+.
-            var w = new Worker(window.URL.createObjectURL(blob));
-            w.onmessage = function(e) {
-                points = e.data;
-                strokeWeight(1)
-                stroke(random()*255,random()*255,random()*255);
-                beginShape();
-                curveVertex(points[0].x, points[0].y);
-                for(let i=0; i<points.length; i++) {
-                    curveVertex(points[i].x, points[i].y);
-                }
-                curveVertex(points[points.length-1].x, points[points.length-1].y);
-                endShape();
-                w.terminate();
-            };
-            w.postMessage({"args" : [x, y, grid, left_x, top_y, resolution, step_length, num_steps, num_columns, num_rows]})
         }
 
         // Where worker is sent lists of curves
@@ -237,7 +191,7 @@
                     scaled_y = row * 0.025
                     // translate the noise value to an angle (betwen 0 and 2 * PI)
                     angle = map(noise(scaled_x, scaled_y), 0, 1, 0, 2 * PI);
-                    angle = roundAngleTo(angle, PI/4);
+                    //angle = roundAngleTo(angle, PI/4);
                     //angle = random()*100/50*PI;
                     grid[col][row] = angle;
                 }
@@ -250,13 +204,13 @@
             //var y = random()*height*((1+(decimal_overhang*2)))-height*(decimal_overhang);
             
             curves_per_row = Math.floor(sqrt(curves));
-            col_width = width/curves_per_row;
-            row_height = height/curves_per_row;
-            col = Math.floor(curves/curves_per_row);
-            row = curves % curves_per_row;
+            col_width = (width+2*width*decimal_overhang)/curves_per_row;
+            row_height = (height+2*height*decimal_overhang)/curves_per_row;
+            col = Math.floor(curves_made/curves_per_row);
+            row = curves_made % curves_per_row;
 
-            var x = col*col_width;
-            var y = row*row_height;
+            var x = col*col_width-decimal_overhang*width    +    Math.floor(random()*col_width-col_width/2);
+            var y = row*row_height-decimal_overhang*height    +     Math.floor(random()*row_height-col_width/2);
 
             return [x, y];
         }
@@ -292,46 +246,12 @@
 
                     var step_length = 1;
                     step_length_list.push(step_length);
-                    var num_steps = Math.floor((random(100)+500));
+                    var num_steps = Math.floor((random()*1000+500));
                     num_steps_list.push(num_steps);
                     curves_made += 1;
                 }
                 w.postMessage({"args" : [x_list, y_list, grid, left_x, top_y, resolution, step_length_list, num_steps_list, num_columns, num_rows]});
             }
-            // for (let i=0; i<curves; i+=1) {
-            //     var x = random()*width*1.4-width*.2;
-            //     var y = random()*height*1.4-height*.2;
-
-            //     let step_length = 10;
-            //     let num_steps = Math.floor((random(100)+100));
-
-            //     strokeWeight(2);
-            //     stroke(random()*255,random()*255,random()*255);
-            //     //stroke(255);
-            //     beginShape();
-            //     curveVertex(x, y);
-            //     for (let n=0; n<num_steps; n++) {
-            //         x_offset = x - left_x;
-            //         y_offset = y - top_y;
-            //         column_index = Math.floor(x_offset / resolution);
-            //         row_index = Math.floor(y_offset / resolution);
-            //         //if checkProximity(x,y) {
-            //             curveVertex(x,y);
-            //         //}
-            //         if (column_index>=0 && row_index>=0 && column_index<num_columns && row_index<num_rows) {
-            //             grid_angle = grid[column_index][row_index];
-            //             x_step = step_length * Math.cos(grid_angle);
-            //             y_step = step_length * Math.sin(grid_angle);
-            //             x += x_step;
-            //             y += y_step;
-            //         } else {
-            //             break;
-            //         }
-            //     }
-            //     curveVertex(x, y);
-            //     curveVertex(x, y);
-            //     endShape();
-            // }
         }
     </script>
 </body>
