@@ -45,7 +45,7 @@
 
         var all_curves = [];
 
-        var collision_removal = true;
+        var collision_removal = false;
         var drawn_map = [];
                 
         var decimal_overhang = .1;
@@ -128,7 +128,7 @@
                 
                 for (let n=0; n<curves.length; n++) {
                     points = curves[n];
-                    strokeWeight(int(random()*6)+1);
+                    strokeWeight(int(random()*1)+2);
                     color = chosen_colors[floor(random()*chosen_colors.length)]
                     stroke(color.hue, color.saturation, color.lightness);
                     
@@ -176,9 +176,9 @@
                 var color_index = 6;
                 for (let color=0; color<colors_per_set; color++) {
                     chosen_colors.push(colors[set_index].colors[color_index]);
-                    color_index += 4;
+                    color_index += 2;
                 }
-                set_index += 1;
+                set_index += 2;
             }
 
             left_x = Math.floor(width * -(decimal_overhang));
