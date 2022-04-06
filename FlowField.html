@@ -43,8 +43,6 @@
         var colors = [];
         var chosen_colors = [];
 
-        var all_curves = [];
-
         var collision_removal = false;
         var drawn_map = [];
                 
@@ -106,7 +104,6 @@
                 for (let y_off=-radius; y_off<=radius; y_off++) {
                     if (y+y_off >= 0 && y+y_off < drawn_map.length && x+x_off >= 0 && x+x_off<drawn_map[0].length) {
                         if (drawn_map[y+y_off][x+x_off] != ignored) {
-                            console.log(x,y)
                             return true;
                         }
                     }
@@ -122,37 +119,36 @@
             ], { type: "text/javascript" })
 
             // Note: window.webkitURL.createObjectURL() in Chrome 10+.
-            var w = new Worker(window.URL.createObjectURL(blob));
+            w = new Worker(window.URL.createObjectURL(blob));
             w.onmessage = function(e) {
                 curves = e.data.curves;
                 curves_made_before = e.data.curves_made_before;
                 
+                color;
                 for (let n=0; n<curves.length; n++) {
                     points = curves[n];
-                    strokeWeight(int(random()*1)+2);
+                    console.log(points)
+                    strokeWeight(int(random()*6)+1);
                     color = chosen_colors[floor(random()*chosen_colors.length)]
                     stroke(color.hue, color.saturation, color.lightness);
                     
                     beginShape();
                     curveVertex(points[0].x, points[0].y);
-                    end_curve = false;
-                    for(let i=0; i<points.length || end_curve; i++) {
-                        console.log(points);
+                    //var continue_curve = true;
+                    for(let i=0; i<points.length; i++) {
                         curveVertex(points[i].x, points[i].y);
-                        if (collision_removal && (Math.floor(points[i].y-top_y) >= 0 && Math.floor(points[i].y-top_y) < drawn_map.length && Math.floor(points[i].x-left_x) >= 0 && Math.floor(points[i].x-left_x) < drawn_map[0].length)) {
-                            if (checkProximity(Math.floor(points[i].x-left_x), Math.floor(points[i].y-top_y), 100, curves_made_before+1+n)) { //} drawn_map[Math.floor(points[i].y-top_y)][Math.floor(points[i].x-left_x)] > curves_made_before+1+n) {
-                                endShape();
-                                end_curve = true;
-                            } else {
-                                drawn_map[Math.floor(points[i].y-top_y)][Math.floor(points[i].x-left_x)] = curves_made_before+1+n;
-                            }
-
-                            
-                        }
+                        // if (collision_removal && (Math.floor(points[i].y-top_y) >= 0 && Math.floor(points[i].y-top_y) < drawn_map.length && Math.floor(points[i].x-left_x) >= 0 && Math.floor(points[i].x-left_x) < drawn_map[0].length)) {
+                        //     if (checkProximity(Math.floor(points[i].x-left_x), Math.floor(points[i].y-top_y), 0, curves_made_before+1+n)) { //} drawn_map[Math.floor(points[i].y-top_y)][Math.floor(points[i].x-left_x)] > curves_made_before+1+n) {
+                        //         continue_curve = false;
+                        //     } else {
+                        //         drawn_map[Math.floor(points[i].y-top_y)][Math.floor(points[i].x-left_x)] = curves_made_before+1+n;
+                        //     }
+                        // }
                     }
                     endShape();
+                    w.terminate();
                 }
-                w.terminate();
+                
             };
             return w;
         }
@@ -178,13 +174,12 @@
 
             var set_index = 2;
             for (let set=0; set<sets; set++) {
-                var set_list = [];
-                var color_index = 6;
+                color_index = 6;
                 for (let color=0; color<colors_per_set; color++) {
                     chosen_colors.push(colors[set_index].colors[color_index]);
-                    color_index += 2;
+                    color_index += 4;
                 }
-                set_index += 2;
+                set_index += 1;
             }
 
             left_x = Math.floor(width * -(decimal_overhang));
@@ -255,7 +250,7 @@
 
             var total_workers = 450;
 
-            var curves = 100;
+            var curves = 1000;
             var curves_made = 0;
             var curves_made_before = 0;
 
@@ -272,8 +267,6 @@
                 step_length_list = [];
                 num_steps_list = [];
 
-                curves_made_before = curves_made;
-
                 for (let j=0; j<curves_for_this_worker; j+=1) {
                     [x, y] = getStartCoordinates(curves_made, curves);
                     
@@ -282,12 +275,11 @@
 
                     var step_length = 1;
                     step_length_list.push(step_length);
-                    var num_steps = Math.floor((random()*100+200));
+                    var num_steps = Math.floor((random()*100+100));
                     num_steps_list.push(num_steps);
                     curves_made += 1;
-                    all_curves.push([]);
                 }
-                w.postMessage({"args" : [x_list, y_list, grid, left_x, top_y, resolution, step_length_list, num_steps_list, num_columns, num_rows, curves_made_before]});
+                w.postMessage({"args" : [x_list, y_list, grid, left_x, top_y, resolution, step_length_list, num_steps_list, num_columns, num_rows, curves_made-curves_for_this_worker]});
             }
         }
     </script>
