@@ -101,11 +101,12 @@
             return round(angle/multiple)*multiple;
         }
 
-        function checkProximity(x, y, radius, minimum) {
+        function checkProximity(x, y, radius, ignored) {
             for (let x_off=-radius; x_off<=radius; x_off++) {
                 for (let y_off=-radius; y_off<=radius; y_off++) {
                     if (y+y_off >= 0 && y+y_off < drawn_map.length && x+x_off >= 0 && x+x_off<drawn_map[0].length) {
-                        if (drawn_map[y+y_off][x+x_off] > 0) {
+                        if (drawn_map[y+y_off][x+x_off] != ignored) {
+                            console.log(x,y)
                             return true;
                         }
                     }
@@ -134,19 +135,24 @@
                     
                     beginShape();
                     curveVertex(points[0].x, points[0].y);
-                    for(let i=0; i<points.length; i++) {
+                    end_curve = false;
+                    for(let i=0; i<points.length || end_curve; i++) {
+                        console.log(points);
                         curveVertex(points[i].x, points[i].y);
-                        if (collision_removal) {
-                            if (checkProximity(Math.floor(points[i].x-left_x), Math.floor(points[i].y-top_y), 1, curves_made_before+1+n)) { //} drawn_map[Math.floor(points[i].y-top_y)][Math.floor(points[i].x-left_x)] > curves_made_before+1+n) {
-                                break;
-                            } else if (Math.floor(points[i].y-top_y) >= 0 && Math.floor(points[i].y-top_y) < drawn_map.length && Math.floor(points[i].x-left_x) >= 0 && Math.floor(points[i].x-left_x) < drawn_map[0].length) {
+                        if (collision_removal && (Math.floor(points[i].y-top_y) >= 0 && Math.floor(points[i].y-top_y) < drawn_map.length && Math.floor(points[i].x-left_x) >= 0 && Math.floor(points[i].x-left_x) < drawn_map[0].length)) {
+                            if (checkProximity(Math.floor(points[i].x-left_x), Math.floor(points[i].y-top_y), 100, curves_made_before+1+n)) { //} drawn_map[Math.floor(points[i].y-top_y)][Math.floor(points[i].x-left_x)] > curves_made_before+1+n) {
+                                endShape();
+                                end_curve = true;
+                            } else {
                                 drawn_map[Math.floor(points[i].y-top_y)][Math.floor(points[i].x-left_x)] = curves_made_before+1+n;
                             }
+
+                            
                         }
                     }
                     endShape();
-                    w.terminate();
                 }
+                w.terminate();
             };
             return w;
         }
@@ -249,12 +255,12 @@
 
             var total_workers = 450;
 
-            var curves = 500;
+            var curves = 100;
             var curves_made = 0;
             var curves_made_before = 0;
 
             curve_per_worker = int(curves/total_workers);
-            for (let i=0; i<total_workers; i+=1) {
+            for (let i=0; i<min(total_workers, curves); i+=1) {
                 w = getWorker();
                 curves_for_this_worker = curve_per_worker;
                 if (i < curves%total_workers) {
@@ -276,7 +282,7 @@
 
                     var step_length = 1;
                     step_length_list.push(step_length);
-                    var num_steps = Math.floor((random()*1+200));
+                    var num_steps = Math.floor((random()*100+200));
                     num_steps_list.push(num_steps);
                     curves_made += 1;
                     all_curves.push([]);
