@@ -7,7 +7,8 @@
     <script src = "p5.js"></script>
     <script src = "sketch.js"></script>
     <script type="text/javascript">
-        const steps = 34;
+        var width_steps = 34;
+        var height_steps = 34;
 
         var colors = [];
         var chosenColors = [];
@@ -46,12 +47,45 @@
             }
         }
 
-        //const colors = ['#003049', '#D62828', '#F77F00', '#FCBF49', '#EAE2B7'];
-        //const colors = ['#080708', '#3772FF', '#DF2935', '#FDCA40', '#E6E8E6'];
-        //const colors = ['#320E3B', '#E56399', '#7F96FF', '#7F96FF', '#DBFCFF'];
+        function setChosenColors() {
+            colors.push(new MonochromaticSet(12, 0, 360))
+            for (let i=0; i<11; i++) {
+                colors.push(colors[colors.length-1].createSecondary())
+            }
+
+            var sets = 2;
+            var minOffSet = 1;
+            var maxOffSet = 3;
+
+            var colorsPerSet = 3;
+            var minOffColor = 3;
+            var maxOffColor = 5;
+
+            var colorOffSets = [];
+            for (let set=0; set<sets; set++) {
+                colorOffSets.push(Math.floor(lerp(minOffColor, maxOffColor+1, random())));
+            }
+
+
+            var setIndex = 4;
+            for (let set=0; set<sets; set++) {
+                var colorIndex = 8;
+                for (let color=0; color<colorsPerSet; color++) {
+                    chosenColors.push(colors[setIndex].colors[colorIndex]);
+                    colorIndex += colorOffSets[set];
+                    colorIndex %= colors[setIndex].colors.length;
+                }
+                setIndex += Math.floor(lerp(minOffSet, maxOffSet+1, random()));
+                setIndex %= colors.length;
+            }
+        }
 
         function setup() {
-            createCanvas(1600, 1600);
+            createCanvas(800, 800);
+
+            width_steps = Math.floor(width*.04)
+            height_steps = Math.floor(height*.04)
+
             background(255);
             stroke(0);
             strokeWeight(1);
@@ -60,63 +94,39 @@
             rectMode(CENTER);
             colorMode(HSL, 360);
 
-            colors.push(new MonochromaticSet(12, 0, 360))
-            for (let i=0; i<11; i++) {
-                colors.push(colors[colors.length-1].createSecondary())
-            }
-
-            var sets = 3;
-            var minOffSet;
-            var maxOffSet;
-
-            var colorsPerSet = 4;
-            var minOffColor = 1;
-            var maxOffColor = 3;
-
-            var setIndex = 2;
-            for (let set=0; set<sets; set++) {
-                var setList = [];
-
-                var colorIndex = 3;
-                for (let color=0; color<colorsPerSet; color++) {
-                    chosenColors.push(colors[setIndex].colors[colorIndex]);
-                    colorIndex += 5;
-                }
-
-                //chosenColors.push(setList);
-
-                setIndex += 2;
-            }
+            setChosenColors();
         }
 
         function draw() {
-        const matrix = [];
-        
-        const s = width/steps;
-        
-        for(let i=1; i<steps; i++) {
-            const line = [];
-            for(let j=1; j<steps; j++) {
-            const x = map(i, 0, steps, 0, width) + (j%2 == 0 ? - s/2 : 0) + lerp(-1, 1, random())*s/3;
-            const y = map(j, 0, steps, 0, height) + lerp(-1, 1, random())*s/3;
-            line.push({x,y});
-            // point(x, y);
-            }
-            matrix.push(line);
-        }
-        for(let i=0; i<steps-2; i++) {
-            for(let j=0; j<steps-2; j++) {
-            noFill();
-            color = chosenColors[floor(random()*chosenColors.length)]
-            fill(color.hue, color.saturation, color.lightness);
-            triangle(
-                matrix[j][i].x, matrix[j][i].y,
-                matrix[j+1][i].x, matrix[j+1][i].y,
-                matrix[j+(i%2==0?1:0)][i+1].x, matrix[j+(i%2==0?1:0)][i+1].y
-            );
+            background(255)
             
-            color = chosenColors[floor(random()*chosenColors.length)]
-            fill(color.hue, color.saturation, color.lightness);
+            const matrix = [];
+        
+            const s = width/width_steps;
+            
+            for(let i=0; i<=width_steps; i++) {
+                const line = [];
+                for(let j=0; j<=height_steps; j++) {
+                    const x = map(i, 0, width_steps, 0, width) + (i==0 || i==width_steps ? 0 : ((j%2 == 1 ? - s/2 : 0) + lerp(-1, 1, random())*s/3));
+                    const y = map(j, 0, height_steps, 0, height) + (j==0 || j==height_steps ? 0 : (lerp(-1, 1, random())*s/3));
+                    line.push({x,y});
+                // point(x, y);
+                }
+                matrix.push(line);
+            }
+            for(let i=0; i<height_steps; i++) {
+                for(let j=0; j<width_steps; j++) {
+                noFill();
+                color = chosenColors[floor(random()*chosenColors.length)]
+                fill(color.hue, color.saturation, color.lightness);
+                triangle(
+                    matrix[j][i].x, matrix[j][i].y,
+                    matrix[j+1][i].x, matrix[j+1][i].y,
+                    matrix[j+(i%2==0?1:0)][i+1].x, matrix[j+(i%2==0?1:0)][i+1].y
+                );
+                
+                color = chosenColors[floor(random()*chosenColors.length)]
+                fill(color.hue, color.saturation, color.lightness);
                     triangle(
                         matrix[j+(i%2==1?1:0)][i].x, matrix[j+(i%2==1?1:0)][i].y,
                         matrix[j][i+1].x, matrix[j][i+1].y,

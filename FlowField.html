@@ -40,13 +40,16 @@
         };
     </script>
     <script type="text/javascript">
-        var colors = [];
         var chosen_colors = [];
 
-        var collision_removal = false;
+        var collision_removal = true;
         var drawn_map = [];
                 
         var decimal_overhang = .1;
+
+        var min_thickness = 3;
+        var max_thickness = 3;
+        var stroke_spacing = 0;
 
         var left_x;
         var right_x;
@@ -95,6 +98,33 @@
             }
         }
 
+        function setChosenColors(sets=2, min_off_set=1, max_off_set=3, colors_per_set=3, min_off_color=3, max_off_color=5) {
+            var colors = [];
+            
+            colors.push(new MonochromaticSet(12, 0, 360))
+            for (let i=0; i<11; i++) {
+                colors.push(colors[colors.length-1].createSecondary())
+            }
+
+            var color_offs = [];
+            for (let set=0; set<sets; set++) {
+                color_offs.push(Math.floor(lerp(min_off_color, max_off_color+1, random())));
+            }
+
+
+            var set_index = 4;
+            for (let set=0; set<sets; set++) {
+                var color_index = 8;
+                for (let color=0; color<colors_per_set; color++) {
+                    chosen_colors.push(colors[set_index].colors[color_index]);
+                    color_index += color_offs[set];
+                    color_index %= colors[set_index].colors.length;
+                }
+                set_index += Math.floor(lerp(min_off_set, max_off_set+1, random()));
+                set_index %= colors.length;
+            }
+        }
+
         function roundAngleTo(angle, multiple) {
             return round(angle/multiple)*multiple;
         }
@@ -103,13 +133,34 @@
             for (let x_off=-radius; x_off<=radius; x_off++) {
                 for (let y_off=-radius; y_off<=radius; y_off++) {
                     if (y+y_off >= 0 && y+y_off < drawn_map.length && x+x_off >= 0 && x+x_off<drawn_map[0].length) {
-                        if (drawn_map[y+y_off][x+x_off] != ignored) {
+                        if (drawn_map[y+y_off][x+x_off] != 0 && drawn_map[y+y_off][x+x_off] != ignored) {
                             return true;
                         }
                     }
                 }
             }
             return false;
+        }
+
+        function drawToMap(x, y, value, radius=1) {
+            for (let x_off=-radius; x_off<=radius; x_off++) {
+                for (let y_off=-radius; y_off<=radius; y_off++) {
+                    if (y+y_off >= 0 && y+y_off < drawn_map.length && x+x_off >= 0 && x+x_off<drawn_map[0].length) {
+                        drawn_map[y+y_off][x+x_off] = value;
+                    }
+                }
+            }
+        }
+
+        function viewMapData() {
+            for (let i=0; i<drawn_map.length; i+=5) {
+                for (let j=0; i<drawn_map[0].length; j+=5) {
+                    if (drawn_map[i][j]) {
+                        fill(255);
+                        circle(j+left_x,i+top_y,1);
+                    }
+                }
+            }
         }
 
         // Where worker is sent lists of curves
@@ -123,27 +174,25 @@
             w.onmessage = function(e) {
                 curves = e.data.curves;
                 curves_made_before = e.data.curves_made_before;
-                
-                color;
                 for (let n=0; n<curves.length; n++) {
                     points = curves[n];
-                    console.log(points)
-                    strokeWeight(int(random()*6)+1);
+                    stroke_width = Math.floor(lerp(min_thickness, max_thickness+1, random()));
+                    strokeWeight(stroke_width);
                     color = chosen_colors[floor(random()*chosen_colors.length)]
                     stroke(color.hue, color.saturation, color.lightness);
                     
                     beginShape();
                     curveVertex(points[0].x, points[0].y);
-                    //var continue_curve = true;
-                    for(let i=0; i<points.length; i++) {
+                    var continue_curve = true;
+                    for(let i=0; (i<points.length && continue_curve); i++) {
                         curveVertex(points[i].x, points[i].y);
-                        // if (collision_removal && (Math.floor(points[i].y-top_y) >= 0 && Math.floor(points[i].y-top_y) < drawn_map.length && Math.floor(points[i].x-left_x) >= 0 && Math.floor(points[i].x-left_x) < drawn_map[0].length)) {
-                        //     if (checkProximity(Math.floor(points[i].x-left_x), Math.floor(points[i].y-top_y), 0, curves_made_before+1+n)) { //} drawn_map[Math.floor(points[i].y-top_y)][Math.floor(points[i].x-left_x)] > curves_made_before+1+n) {
-                        //         continue_curve = false;
-                        //     } else {
-                        //         drawn_map[Math.floor(points[i].y-top_y)][Math.floor(points[i].x-left_x)] = curves_made_before+1+n;
-                        //     }
-                        // }
+                        if (collision_removal && (Math.floor(points[i].y-top_y) >= 0 && Math.floor(points[i].y-top_y) < drawn_map.length && Math.floor(points[i].x-left_x) >= 0 && Math.floor(points[i].x-left_x) < drawn_map[0].length)) {
+                            if (checkProximity(Math.floor(points[i].x-left_x), Math.floor(points[i].y-top_y), stroke_width+stroke_spacing, curves_made_before+1+n)) { //} drawn_map[Math.floor(points[i].y-top_y)][Math.floor(points[i].x-left_x)] > curves_made_before+1+n) {
+                                continue_curve = false;
+                            } else {
+                                drawToMap(Math.floor(points[i].x-left_x), Math.floor(points[i].y-top_y), curves_made_before+1+n, Math.floor(stroke_width/2));
+                            }
+                        }
                     }
                     endShape();
                     w.terminate();
@@ -159,28 +208,7 @@
 
             colorMode(HSL, 360);
 
-            colors.push(new MonochromaticSet(12, 0, 360))
-            for (let i=0; i<11; i++) {
-                colors.push(colors[colors.length-1].createSecondary())
-            }
-
-            var sets = 3;
-            var min_off_set;
-            var max_off_set;
-
-            var colors_per_set = 4;
-            var min_off_color = 1;
-            var max_off_color = 3;
-
-            var set_index = 2;
-            for (let set=0; set<sets; set++) {
-                color_index = 6;
-                for (let color=0; color<colors_per_set; color++) {
-                    chosen_colors.push(colors[set_index].colors[color_index]);
-                    color_index += 4;
-                }
-                set_index += 1;
-            }
+            setChosenColors(3,3,3,4,3,3);
 
             left_x = Math.floor(width * -(decimal_overhang));
             right_x = Math.floor(width * (1+(decimal_overhang)));
@@ -214,12 +242,22 @@
                 for (let col=0; col<num_columns; col++) {
                     // Processing's noise() works best when the step between
                     // points is approximately 0.005, so scale down to that
-                    scaled_x = col * 0.015
-                    scaled_y = row * 0.015
+                    scaled_x = col * .0025
+                    scaled_y = row * .0025
                     // translate the noise value to an angle (betwen 0 and 2 * PI)
                     angle = map(noise(scaled_x, scaled_y), 0, 1, 0, 2 * PI);
-                    //angle = roundAngleTo(angle, PI/4);
+                    angle = roundAngleTo(angle, PI/6);
                     //angle = random()*100/50*PI;
+                    
+                    // Circles
+                    //angle = Math.atan((row-num_rows/2)/(col-num_columns/2))+PI/2;
+
+                    // a = 20;
+                    // dist = sqrt(Math.pow((row-num_rows/2),2) + Math.pow((col-num_columns/2),2));
+                    // angle = (Math.acos((dist-a)/a)+PI/4) % (2*PI);
+
+
+
                     grid[col][row] = angle;
                 }
             }
@@ -227,9 +265,11 @@
 
 
         function getStartCoordinates(curves_made, curves) {
-            //var x = random()*width*((1+(decimal_overhang*2)))-width*(decimal_overhang);
-            //var y = random()*height*((1+(decimal_overhang*2)))-height*(decimal_overhang);
+            var x = random()*width*((1+(decimal_overhang*2)))-width*(decimal_overhang);
+            var y = random()*height*((1+(decimal_overhang*2)))-height*(decimal_overhang);
             
+            return [x, y];
+
             curves_per_row = Math.floor(sqrt(curves));
             col_width = (width+2*width*decimal_overhang)/curves_per_row;
             row_height = (height+2*height*decimal_overhang)/curves_per_row;
@@ -273,9 +313,9 @@
                     x_list.push(x);
                     y_list.push(y);
 
-                    var step_length = 1;
+                    var step_length = .5;
                     step_length_list.push(step_length);
-                    var num_steps = Math.floor((random()*100+100));
+                    var num_steps = Math.floor((random()*100+500));
                     num_steps_list.push(num_steps);
                     curves_made += 1;
                 }
