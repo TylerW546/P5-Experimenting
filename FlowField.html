@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -12,11 +14,13 @@
         self.onmessage = function(e) {
             [x_list, y_list, grid, left_x, top_y, resolution, step_length_list, num_steps_list, num_columns, num_rows, curves_made_before] = e.data.args;
             curves = [];
+
             for (var i=0; i<x_list.length; i++) {
                 x = x_list[i];
                 y = y_list[i];
                 step_length = step_length_list[i];
                 num_steps = num_steps_list[i];
+                
                 points = [];
                 for (let n=0; n<num_steps; n++) {
                     x_offset = x - left_x;
@@ -25,7 +29,7 @@
                     row_index = Math.floor(y_offset / resolution);
                     points.push({'x' : x, 'y' : y});
                     if (column_index>=0 && row_index>=0 && column_index<num_columns && row_index<num_rows) {
-                        grid_angle = grid[column_index][row_index];
+                        grid_angle = grid[row_index][column_index];
                         x_step = step_length * Math.cos(grid_angle);
                         y_step = step_length * Math.sin(grid_angle);
                         x += x_step;
@@ -47,8 +51,8 @@
                 
         var decimal_overhang = .1;
 
-        var min_thickness = 3;
-        var max_thickness = 3;
+        var min_thickness = 1;
+        var max_thickness = 1;
         var stroke_spacing = 0;
 
         var left_x;
@@ -223,7 +227,7 @@
                 drawn_map.push(row_list);
             }
 
-            resolution = Math.floor(width * 0.01);
+            resolution = Math.floor(width * 0.005);
             num_columns = (right_x - left_x) / resolution;
             num_rows = (bottom_y - top_y) / resolution;
             grid = [];
@@ -240,17 +244,35 @@
 
             for (let row=0; row<num_rows; row++) {    
                 for (let col=0; col<num_columns; col++) {
+                    // Where center is (0,0)
+                    x = (col-num_columns/2);
+                    y = (row-num_rows/2);
+                    
                     // Processing's noise() works best when the step between
                     // points is approximately 0.005, so scale down to that
-                    scaled_x = col * .0025
-                    scaled_y = row * .0025
+                    scaled_x = col * .005
+                    scaled_y = row * .005
                     // translate the noise value to an angle (betwen 0 and 2 * PI)
                     angle = map(noise(scaled_x, scaled_y), 0, 1, 0, 2 * PI);
-                    angle = roundAngleTo(angle, PI/6);
+                    //angle = roundAngleTo(angle, PI/6);
                     //angle = random()*100/50*PI;
                     
-                    // Circles
-                    //angle = Math.atan((row-num_rows/2)/(col-num_columns/2))+PI/2;
+
+
+
+                    // Polar Coordinates
+                    var theta;
+                    theta = Math.atan(y/x)+2*PI;
+                    if (x < 0) {
+                        theta += PI;
+                    }
+                    
+                    //angle = theta;
+                    //angle = theta+PI/2;
+                    //angle = 3/2**theta;
+                    //angle = 11/2*theta;
+
+                    //angle = (x<0 && y<0) ? -3*theta/2 : -3*theta/2;
 
                     // a = 20;
                     // dist = sqrt(Math.pow((row-num_rows/2),2) + Math.pow((col-num_columns/2),2));
@@ -258,9 +280,10 @@
 
 
 
-                    grid[col][row] = angle;
+                    grid[row][col] = angle;
                 }
             }
+            console.log(grid);
         }
 
 
@@ -290,7 +313,7 @@
 
             var total_workers = 450;
 
-            var curves = 1000;
+            var curves = 400;
             var curves_made = 0;
             var curves_made_before = 0;
 
@@ -313,9 +336,9 @@
                     x_list.push(x);
                     y_list.push(y);
 
-                    var step_length = .5;
+                    var step_length = 1;
                     step_length_list.push(step_length);
-                    var num_steps = Math.floor((random()*100+500));
+                    var num_steps = Math.floor((random()*100+400));
                     num_steps_list.push(num_steps);
                     curves_made += 1;
                 }
