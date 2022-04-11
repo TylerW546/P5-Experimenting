@@ -7,9 +7,19 @@
     <script src = "p5.js"></script>
     <script src = "sketch.js"></script>
     <script id="multi_curve_worker" type="javascript/worker">
+        function abs(value) {
+            if (value >= 0) {
+                return value
+            } else {
+                return -1*value;
+            }
+        }
+
         self.onmessage = function(e) {
             [x_list, y_list, grid, left_x, top_y, resolution, step_length_list, num_steps_list, num_columns, num_rows, curves_made_before, backwards_traversal] = e.data.args;
             curves = [];
+
+            PI = 3.141593;
 
             for (var i=0; i<x_list.length; i++) {
                 x = x_list[i];
@@ -17,7 +27,7 @@
                 step_length = step_length_list[i];
                 num_steps = num_steps_list[i];
                 
-                grid_angle = 0;
+                grid_angle = null;
 
                 points = [];
                 for (let n=0; n<num_steps; n++) {
@@ -26,8 +36,13 @@
                     column_index = Math.floor(x_offset / resolution);
                     row_index = Math.floor(y_offset / resolution);
                     points.push({'x' : x, 'y' : y});
-                    if (column_index>=0 && row_index>=0 && column_index<num_columns && row_index<num_rows) {
-                        if (grid[row_index][column_index]) {
+                    if (column_index>=0 && row_index>=0 && column_index<num_columns && row_index<num_rows && grid[row_index][column_index] != null) {
+                        if (grid_angle == null) {
+                            grid_angle = grid[row_index][column_index];
+                        }
+                        else if (abs(grid_angle-grid[row_index][column_index]) > PI/2+.001 && abs(grid_angle-grid[row_index][column_index]) < 3*PI/2-.001) {
+                            grid_angle = (grid[row_index][column_index] + PI) % (PI*2);
+                        } else {
                             grid_angle = grid[row_index][column_index];
                         }
                         x_step = step_length * Math.cos(grid_angle);
@@ -42,19 +57,26 @@
                 if (backwards_traversal) {
                     x = x_list[i];
                     y = y_list[i];
-                    grid_angle = 0;
+
+                    grid_angle = null;
+                    
                     for (let n=0; n<num_steps; n++) {
                         x_offset = x - left_x;
                         y_offset = y - top_y;
                         column_index = Math.floor(x_offset / resolution);
                         row_index = Math.floor(y_offset / resolution);
                         points.unshift({'x' : x, 'y' : y});
-                        if (column_index>=0 && row_index>=0 && column_index<num_columns && row_index<num_rows) {
-                            if (grid[row_index][column_index]) {
-                                grid_angle = grid[row_index][column_index];
+                        if (column_index>=0 && row_index>=0 && column_index<num_columns && row_index<num_rows && grid[row_index][column_index] != null) {
+                            if (grid_angle == null) {
+                                grid_angle = ((grid[row_index][column_index] + PI)%(PI*2));
                             }
-                            x_step = step_length * Math.cos(grid_angle + 3.14159);
-                            y_step = step_length * Math.sin(grid_angle + 3.14159);
+                            else if (abs(grid_angle-((grid[row_index][column_index] + PI)%(PI*2))) > PI/2+.001 && abs(grid_angle-((grid[row_index][column_index] + PI)%(PI*2))) < 3*PI/2-.001) {
+                                grid_angle = grid[row_index][column_index];
+                            } else {
+                                grid_angle = ((grid[row_index][column_index] + PI)%(PI*2));
+                            }
+                            x_step = step_length * Math.cos(grid_angle);
+                            y_step = step_length * Math.sin(grid_angle);
                             x += x_step;
                             y += y_step;
                         } else {
@@ -73,12 +95,13 @@
 
         var backwards_traversal = true;
 
-        var collision_removal = false;
+        var collision_removal = true;
         var same_color_allowed = false;
         var drawn_map = [];
+        var min_length = 10;
 
-        var center_destruction = true;
-        var distance_to_center = 10;
+        var center_destruction = false;
+        var distance_to_center = 0;
 
         var a;
                 
@@ -183,7 +206,7 @@
             for (let x_off=-radius; x_off<=radius; x_off++) {
                 for (let y_off=-radius; y_off<=radius; y_off++) {
                     if (y+y_off >= 0 && y+y_off < drawn_map.length && x+x_off >= 0 && x+x_off<drawn_map[0].length) {
-                        if (y+y_off-center_y==0 && x+x_off-center_x==0) {
+                        if (abs(y+y_off-center_y) < 1 && (abs(x+x_off-center_x) < 1)) {
                             return true;
                         }
                     }
@@ -240,7 +263,7 @@
                             if (same_color_allowed) {
                                 if (checkProximity(Math.floor(points[i].x-left_x), Math.floor(points[i].y-top_y), stroke_width+stroke_spacing, color)) { //} drawn_map[Math.floor(points[i].y-top_y)][Math.floor(points[i].x-left_x)] > curves_made_before+1+n) {
                                     continue_curve = false;
-                                    if ([i] > 20) {
+                                    if (i > min_length) {
                                         endShape();
                                     }
                                 } else {
@@ -249,7 +272,7 @@
                             } else {
                                 if (checkProximity(Math.floor(points[i].x-left_x), Math.floor(points[i].y-top_y), stroke_width+stroke_spacing, curves_made_before+1+n)) { //} drawn_map[Math.floor(points[i].y-top_y)][Math.floor(points[i].x-left_x)] > curves_made_before+1+n) {
                                     continue_curve = false;
-                                    if ([i] > 20) {
+                                    if (i > min_length) {
                                         endShape();
                                     }
                                 } else {
@@ -260,7 +283,7 @@
                         if (center_destruction) {
                             if (checkCenterCollision(points[i].x, points[i].y, width/2, height/2, distance_to_center)) {
                                 continue_curve = false;
-                                if ([i] > 20) {
+                                if (i > min_length) {
                                     endShape();
                                 }
                             }
@@ -277,6 +300,14 @@
         }
 
         function angleFromXY(x, y) {
+            if (x == 0) {
+                if (y>=0) {
+                    return PI/2;
+                } else {
+                    return 3*PI/2;
+                }
+            }
+            
             theta = (Math.atan(y/x))+2*PI;
             if (x < 0) {
                 theta += PI;
@@ -344,42 +375,65 @@
                     var theta = angleFromXY(x, y);
                     
                     r = sqrt(Math.pow((row-num_rows/2),2) + Math.pow((col-num_columns/2),2));
-
-                    // else if (y < 0) {
-                    //     theta += 2*PI
-                    // }
                     
-                    // // Concentric Circles
-                    //angle = theta+PI/2;
+                    // Concentric Circles
+                    angle = theta+PI/2;
                     
                     // // Add to Circles for Concentric Rectangles
-                    //angle = roundAngleTo(angle, PI/2);
+                    // angle = roundAngleTo(angle, PI/2);
 
-                    // Flower, where a-2 is the number of petals
-                    // a is defined randomly above
-                    a = 5;
-                    angle = a/2*theta;
-                    if (a%2 == 1 && x >= 0 && y < 0) {
-                        angle += PI;
-                    }
+                    // // Flower, where a-2 is the number of petals
+                    // // a is defined randomly above
+                    // a = 5;
+                    // angle = a/2*theta;
 
+                    // // Spiral
+                    // angle = Math.atan((Math.tan(theta)+theta)/(1-theta*Math.tan(theta)))
+                
                     //angle = (x<0 && y<0) ? -3*theta/2 : -3*theta/2;
 
                     // a = 20;
                     // angle = (Math.acos((dist-a)/a)+PI/4) % (2*PI);
 
 
-                    // // Pulls lines in to center
-                    // vector_pull = [Math.cos(angle) - 1.5*Math.cos(theta), Math.sin(angle) - 1.5*Math.sin(theta)]
-                    // angle = angleFromXY(vector_pull[0], vector_pull[1]);
+                    // Pulls lines in to center
+                    // Add this to circles for cool spirals
+                    vector_pull = [Math.cos(angle) - 3*Math.cos(theta), Math.sin(angle) - 3*Math.sin(theta)]
+                    angle = angleFromXY(vector_pull[0], vector_pull[1]);
                     
                     
-                    grid[row][col] = angle;
+                    grid[row][col] = angle % (2*PI);
                 }
             }
             console.log(grid);
         }
 
+        function findWhiteSpace(radius, max_tries) {
+            row = 0;
+            col = 0;
+
+            found = false;
+            tries = 0;
+            while (!found && tries < max_tries) {
+                tries += 1
+                row = Math.floor(random()*drawn_map.length);
+                col = Math.floor(random()*drawn_map[0].length);
+
+                found = true;
+                for (let row_off=-radius; row_off<=radius && found; row_off++) {
+                    for (let col_off=-radius; col_off<=radius && found; col_off++) {
+                        if (row+row_off >= 0 && row+row_off < drawn_map.length && col+col_off >= 0 && col+col_off<drawn_map[0].length) {
+                            if (drawn_map[row+row_off][col+col_off] != 0) {
+                                found = false;
+                            }
+                        }
+                    }
+                }
+            }
+
+
+            return [row*resolution, col*resolution]
+        }
 
         function getStartCoordinates(curves_made, curves) {
             var x = random()*width*((1+(decimal_overhang*2)))-width*(decimal_overhang);
@@ -425,8 +479,9 @@
                 num_steps_list = [];
 
                 for (let j=0; j<curves_for_this_worker; j+=1) {
-                    [x, y] = getStartCoordinates(curves_made, curves);
-                    
+                    //[x, y] = getStartCoordinates(curves_made, curves);
+                    [x,y] = findWhiteSpace(1, 1000);
+
                     x_list.push(x);
                     y_list.push(y);
 
