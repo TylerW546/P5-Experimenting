@@ -97,13 +97,13 @@
 
         var backwards_traversal = true;
 
-        var collision_removal = true;
+        var collision_removal = false;
         var same_color_allowed = false;
         var drawn_map = [];
         var min_length = 10;
 
-        var center_destruction = false;
-        var distance_to_center = 0;
+        var center_destruction = true;
+        var distance_to_center = 20;
 
         var a;
 
@@ -205,14 +205,8 @@
         }
 
         function checkCenterCollision(x, y, center_x, center_y, radius) {
-            for (let x_off = -radius; x_off <= radius; x_off++) {
-                for (let y_off = -radius; y_off <= radius; y_off++) {
-                    if (y + y_off >= 0 && y + y_off < drawn_map.length && x + x_off >= 0 && x + x_off < drawn_map[0].length) {
-                        if (abs(y + y_off - center_y) < 1 && (abs(x + x_off - center_x) < 1)) {
-                            return true;
-                        }
-                    }
-                }
+            if (sqrt(Math.pow((x-center_x), 2) + Math.pow(y-center_y), 2) < radius) {
+                return true;
             }
             return false;
         }
@@ -378,16 +372,16 @@
 
                     r = sqrt(Math.pow((row - num_rows / 2), 2) + Math.pow((col - num_columns / 2), 2));
 
-                    // Concentric Circles
-                    angle = theta + PI / 2;
+                    // // Concentric Circles
+                    // angle = theta + PI / 2;
 
                     // // Add to Circles for Concentric Rectangles
                     // angle = roundAngleTo(angle, PI/2);
 
-                    // // Flower, where a-2 is the number of petals
-                    // // a is defined randomly above
-                    // a = 5;
-                    // angle = a/2*theta;
+                    // Flower, where a-2 is the number of petals
+                    // a is defined randomly above
+                    a = 3;
+                    angle = a/2*theta;
 
                     // // Spiral
                     // angle = Math.atan((Math.tan(theta)+theta)/(1-theta*Math.tan(theta)))
@@ -398,10 +392,10 @@
                     // angle = (Math.acos((dist-a)/a)+PI/4) % (2*PI);
 
 
-                    // Pulls lines in to center
-                    // Add this to circles for cool spirals
-                    vector_pull = [Math.cos(angle) - 3 * Math.cos(theta), Math.sin(angle) - 3 * Math.sin(theta)]
-                    angle = angleFromXY(vector_pull[0], vector_pull[1]);
+                    // // Pulls lines in to center
+                    // // Add this to circles for cool spirals
+                    // vector_pull = [Math.cos(angle) - 1.5 * Math.cos(theta), Math.sin(angle) - 1.5 * Math.sin(theta)]
+                    // angle = angleFromXY(vector_pull[0], vector_pull[1]);
 
 
                     grid[row][col] = angle % (2 * PI);
@@ -461,7 +455,7 @@
             noFill();
             noLoop();
 
-            var total_workers = 450;
+            var total_workers = 200;
 
             var curves = 4000;
             var curves_made = 0;
@@ -481,8 +475,8 @@
                 num_steps_list = [];
 
                 for (let j = 0; j < curves_for_this_worker; j += 1) {
-                    //[x, y] = getStartCoordinates(curves_made, curves);
-                    [x, y] = findWhiteSpace(1, 1000);
+                    [x, y] = getStartCoordinates(curves_made, curves);
+                    //[x, y] = findWhiteSpace(1, 1000);
 
                     x_list.push(x);
                     y_list.push(y);
