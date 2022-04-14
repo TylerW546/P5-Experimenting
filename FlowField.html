@@ -23,7 +23,7 @@
 
             PI = 3.141593;
 
-            addition_strength = .1
+            addition_strength = .4
 
             for (var i=0; i<x_list.length; i++) {
                 x = x_list[i];
@@ -52,10 +52,11 @@
                             grid_angle = grid[row_index][column_index];
                         }
                         old_velocity = velocity;
-                        velocity = grid_angle //Math.atan((Math.sin(velocity)+addition_strength*Math.sin(grid_angle))/(Math.cos(velocity)+addition_strength*Math.cos(grid_angle))) % (2*PI);
-                        //if (Math.cos(velocity)+addition_strength*Math.cos(grid_angle) < 0) {
-                        //    velocity = (velocity + PI) % (PI*2);
-                        //}
+                        velocity = Math.atan((Math.sin(velocity)+addition_strength*Math.sin(grid_angle))/(Math.cos(velocity)+addition_strength*Math.cos(grid_angle))) % (2*PI);
+                        if (Math.cos(velocity)+addition_strength*Math.cos(grid_angle) < 0) {
+                            velocity = (velocity + PI) % (2*PI)
+                        }
+                        
                         x_step = step_length * Math.cos(velocity);
                         y_step = step_length * Math.sin(velocity);
                         x += x_step;
@@ -88,10 +89,11 @@
                                 grid_angle = ((grid[row_index][column_index] + PI)%(PI*2));
                             }
                             old_velocity = velocity;
-                            velocity = grid_angle //Math.atan((Math.sin(velocity)+addition_strength*Math.sin(grid_angle))/(Math.cos(velocity)+addition_strength*Math.cos(grid_angle))) % (2*PI);
-                        //if (Math.cos(velocity)+addition_strength*Math.cos(grid_angle) < 0) {
-                        //    velocity = (velocity + PI) % (PI*2);
-                        //}
+                            velocity = Math.atan((Math.sin(velocity)+addition_strength*Math.sin(grid_angle))/(Math.cos(velocity)+addition_strength*Math.cos(grid_angle))) % (2*PI);
+                            if (Math.cos(velocity)+addition_strength*Math.cos(grid_angle) < 0) {
+                                velocity = (velocity + PI) % (2*PI)
+                            }
+
                             x_step = step_length * Math.cos(velocity);
                             y_step = step_length * Math.sin(velocity);
                             x += x_step;
@@ -206,8 +208,8 @@
 
         var decimal_overhang = .1;
 
-        var min_thickness = 2;
-        var max_thickness = 5;
+        var min_thickness = 4;
+        var max_thickness = 7;
         var stroke_spacing = 0;
 
         var left_x;
@@ -222,6 +224,114 @@
         var default_angle;
 
         var curvesDrawn = 0;
+
+        
+        function setup() {
+            createCanvas(800, 800);
+
+            colorMode(HSL, 360);
+
+            setChosenColors(3, 2, 2, 2, 3, 3);
+
+            left_x = Math.floor(width * -(decimal_overhang));
+            right_x = Math.floor(width * (1 + (decimal_overhang)));
+            top_y = Math.floor(height * -(decimal_overhang));
+            bottom_y = Math.floor(height * (1 + (decimal_overhang)));
+
+            for (let row = 0; row < Math.floor(bottom_y - top_y); row++) {
+                var row_list = [];
+                for (let col = 0; col < Math.floor(right_x - left_x); col++) {
+                    row_list.push(0);
+                }
+                drawn_map.push(row_list);
+            }
+
+            resolution = Math.floor(width * 0.005);
+            num_columns = (right_x - left_x) / resolution;
+            num_rows = (bottom_y - top_y) / resolution;
+            grid = [];
+            for (let i = 0; i < num_columns; i++) {
+                grid.push([]);
+            }
+            default_angle = PI * 0.25;
+
+            for (let col = 0; col < num_columns; col++) {
+                for (let row = 0; row < num_rows; row++) {
+                    grid[col][row] = default_angle;
+                }
+            }
+
+            a = Math.floor(lerp(1, 15, random()));
+            console.log(a);
+
+            for (let row = 0; row < num_rows; row++) {
+                for (let col = 0; col < num_columns; col++) {
+                    // Where center is (0,0)
+                    x = (col - num_columns / 2);
+                    y = (row - num_rows / 2);
+
+                    // Processing's noise() works best when the step between
+                    // points is approximately 0.005, so scale down to that
+                    scaled_x = col * .005
+                    scaled_y = row * .005
+                    // translate the noise value to an angle (betwen 0 and 2 * PI)
+                    angle = map(noise(scaled_x, scaled_y), 0, 1, 0, 2 * PI);
+                    //angle = roundAngleTo(angle, PI/6);
+                    //angle = random()*100/50*PI;
+
+
+
+
+                    // Polar Coordinates -------------------------
+                    var theta = angleFromXY(x, y);
+
+                    r = sqrt(Math.pow((row - num_rows / 2), 2) + Math.pow((col - num_columns / 2), 2));
+
+                    // // Concentric Circles
+                    // angle = theta + PI / 2;
+
+                    // // Add to Circles for Concentric Rectangles
+                    // angle = roundAngleTo(angle, PI/2);
+
+                    // // Flower, where a-2 is the number of petals
+                    // // a is defined randomly above
+                    // a = 15;
+                    // angle = a/2*theta;
+
+                    // // Spiral
+                    // angle = Math.atan((Math.tan(theta)+theta)/(1-theta*Math.tan(theta)))
+
+                    // angle = (x<0 && y<0) ? -2*theta/2 : -2*theta/2;
+
+                    // a = 20;
+                    // angle = (Math.acos((dist-a)/a)+PI/4) % (2*PI);
+
+
+                    // // Pulls lines in to center
+                    // // Add this to circles for cool spirals
+                    // vector_pull = [Math.cos(angle) - 1.5 * Math.cos(theta), Math.sin(angle) - 1.5 * Math.sin(theta)]
+                    // angle = angleFromXY(vector_pull[0], vector_pull[1]);
+                    
+                    // // ROSES
+                    // // s defines petal stretch
+                    // // 2a defines petal number 
+                    // s = 13
+                    // a = .5
+                    // angle = Math.atan((a*Math.cos(a*theta)*Math.sin(theta)+Math.sin(a*theta)*Math.cos(theta))/(a*Math.cos(a*theta)*Math.cos(theta)-Math.sin(a*theta)*Math.sin(theta)))
+
+                    // // LOGARITHMIC SPIRAL
+                    // // smaller b = more spiraling
+                    // b = .5;
+                    // angle = Math.atan((Math.tan(theta)+1/b)/(1-Math.tan(theta)/b))
+                    
+                    
+                    
+                    
+                    grid[row][col] = angle % (2 * PI);
+                }
+            }
+            console.log(grid);
+        }
 
         class Color {
             constructor(H, S, L) {
@@ -334,7 +444,7 @@
             // velocity_worker
             // multi_curve_worker
             var blob = new Blob([
-                document.querySelector('#velocity_worker').textContent
+                document.querySelector('#multi_curve_worker').textContent
             ], { type: "text/javascript" })
 
             // Note: window.webkitURL.createObjectURL() in Chrome 10+.
@@ -408,113 +518,6 @@
                 theta += PI;
             }
             return theta;
-        }
-
-        function setup() {
-            createCanvas(800, 800);
-
-            colorMode(HSL, 360);
-
-            setChosenColors(3, 2, 2, 2, 3, 3);
-
-            left_x = Math.floor(width * -(decimal_overhang));
-            right_x = Math.floor(width * (1 + (decimal_overhang)));
-            top_y = Math.floor(height * -(decimal_overhang));
-            bottom_y = Math.floor(height * (1 + (decimal_overhang)));
-
-            for (let row = 0; row < Math.floor(bottom_y - top_y); row++) {
-                var row_list = [];
-                for (let col = 0; col < Math.floor(right_x - left_x); col++) {
-                    row_list.push(0);
-                }
-                drawn_map.push(row_list);
-            }
-
-            resolution = Math.floor(width * 0.005);
-            num_columns = (right_x - left_x) / resolution;
-            num_rows = (bottom_y - top_y) / resolution;
-            grid = [];
-            for (let i = 0; i < num_columns; i++) {
-                grid.push([]);
-            }
-            default_angle = PI * 0.25;
-
-            for (let col = 0; col < num_columns; col++) {
-                for (let row = 0; row < num_rows; row++) {
-                    grid[col][row] = default_angle;
-                }
-            }
-
-            a = Math.floor(lerp(1, 15, random()));
-            console.log(a);
-
-            for (let row = 0; row < num_rows; row++) {
-                for (let col = 0; col < num_columns; col++) {
-                    // Where center is (0,0)
-                    x = (col - num_columns / 2);
-                    y = (row - num_rows / 2);
-
-                    // Processing's noise() works best when the step between
-                    // points is approximately 0.005, so scale down to that
-                    scaled_x = col * .005
-                    scaled_y = row * .005
-                    // translate the noise value to an angle (betwen 0 and 2 * PI)
-                    angle = map(noise(scaled_x, scaled_y), 0, 1, 0, 2 * PI);
-                    //angle = roundAngleTo(angle, PI/6);
-                    //angle = random()*100/50*PI;
-
-
-
-
-                    // Polar Coordinates -------------------------
-                    var theta = angleFromXY(x, y);
-
-                    r = sqrt(Math.pow((row - num_rows / 2), 2) + Math.pow((col - num_columns / 2), 2));
-
-                    // // Concentric Circles
-                    // angle = theta + PI / 2;
-
-                    // // Add to Circles for Concentric Rectangles
-                    // angle = roundAngleTo(angle, PI/2);
-
-                    // Flower, where a-2 is the number of petals
-                    // a is defined randomly above
-                    a = 15;
-                    angle = a/2*theta;
-
-                    // // Spiral
-                    // angle = Math.atan((Math.tan(theta)+theta)/(1-theta*Math.tan(theta)))
-
-                    //angle = (x<0 && y<0) ? -3*theta/2 : -3*theta/2;
-
-                    // a = 20;
-                    // angle = (Math.acos((dist-a)/a)+PI/4) % (2*PI);
-
-
-                    // // Pulls lines in to center
-                    // // Add this to circles for cool spirals
-                    // vector_pull = [Math.cos(angle) - 1.5 * Math.cos(theta), Math.sin(angle) - 1.5 * Math.sin(theta)]
-                    // angle = angleFromXY(vector_pull[0], vector_pull[1]);
-                    
-                    // // ROSES
-                    // // s defines petal stretch
-                    // // 2a defines petal number 
-                    // s = 13
-                    // a = .5
-                    // angle = Math.atan((a*Math.cos(a*theta)*Math.sin(theta)+Math.sin(a*theta)*Math.cos(theta))/(a*Math.cos(a*theta)*Math.cos(theta)-Math.sin(a*theta)*Math.sin(theta)))
-
-                    // LOGARITHMIC SPIRAL
-                    // smaller b = more spiraling
-                    b = .5;
-                    angle = Math.atan((Math.tan(theta)+1/b)/(1-Math.tan(theta)/b))
-                    
-                    
-                    
-                    
-                    grid[row][col] = angle % (2 * PI);
-                }
-            }
-            console.log(grid);
         }
 
         function findWhiteSpace(radius, max_tries) {
@@ -599,7 +602,7 @@
 
                     var step_length = 1;
                     step_length_list.push(step_length);
-                    var num_steps = Math.floor((random() * 100 + 400));
+                    var num_steps = Math.floor((random() * 100 + 100));
                     num_steps_list.push(num_steps);
                     curves_made += 1;
                 }
