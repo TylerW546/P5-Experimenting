@@ -23,7 +23,7 @@
 
             PI = 3.141593;
 
-            addition_strength = 2
+            addition_strength = .04
 
             for (var i=0; i<x_list.length; i++) {
                 x = x_list[i];
@@ -186,26 +186,26 @@
     <script type="text/javascript">
         var chosen_colors = [];
 
-        var backwards_traversal = true;
+        var backwards_traversal = false;
         
-        var self_collision_removal = false;
+        var self_collision_removal = true;
         
-        var collision_removal = true;
+        var collision_removal = false;
         var same_color_allowed = false;
         var drawn_map = [];
         var color_map = [];
         var min_length = 10;
 
-        var center_destruction = true;
+        var center_destruction = false;
         var distance_to_center = 10;
 
         var a;
 
         var decimal_overhang = .1;
 
-        var min_thickness = 3;
-        var max_thickness = 10;
-        var stroke_spacing = -1;
+        var min_thickness = 1;
+        var max_thickness = 3;
+        var stroke_spacing = 0;
 
         var left_x;
         var right_x;
@@ -239,15 +239,15 @@
 
             r = sqrt(Math.pow((row - num_rows / 2), 2) + Math.pow((col - num_columns / 2), 2));
 
-            // Concentric Circles
-            angle = theta + PI / 2;
+            // // Concentric Circles
+            // angle = theta + PI / 2;
 
             // // Add to Circles for Concentric Rectangles
             // angle = roundAngleTo(angle, PI/2);
 
             // // Flower, where a-2 is the number of petals
             // // a is defined randomly above
-            // a = 15;
+            // a = 5;
             // angle = a/2*theta;
 
             // // Spiral
@@ -261,7 +261,7 @@
 
             // // Pulls lines in to center
             // // Add this to circles for cool spirals
-            // h_pull_power = 1.5;
+            // h_pull_power = 1;
             // v_pull_power = 1/4*h_pull_power;
             // vector_pull = [Math.cos(angle) - h_pull_power * Math.cos(theta), Math.sin(angle) - v_pull_power * Math.sin(theta)]
             // angle = angleFromXY(vector_pull[0], vector_pull[1]);
@@ -400,7 +400,7 @@
             // velocity_worker
             // multi_curve_worker
             var blob = new Blob([
-                document.querySelector('#multi_curve_worker').textContent
+                document.querySelector('#velocity_worker').textContent
             ], { type: "text/javascript" })
 
             // Note: window.webkitURL.createObjectURL() in Chrome 10+.
@@ -604,7 +604,7 @@
 
             var total_workers = 200;
 
-            var curves = 4000;
+            var curves = 100;
             var curves_made = 0;
             var curves_made_before = 0;
 
@@ -629,9 +629,9 @@
                     x_list.push(x);
                     y_list.push(y);
 
-                    var step_length = .5;
+                    var step_length = 6;
                     step_length_list.push(step_length);
-                    var num_steps = Math.floor((random() * 100 + 100));
+                    var num_steps = Math.floor((random() * 100 + 1000));
                     num_steps_list.push(num_steps);
                     curves_made += 1;
                 }
