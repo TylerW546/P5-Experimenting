@@ -34,17 +34,17 @@
         }
 
         self.onmessage = function(e) {
-            [x_list, y_list, grid, left_x, top_y, resolution, step_length_list, num_steps_list, num_columns, num_rows, curves_made_before, backwards_traversal, random] = e.data.args;
+            [x_list, y_list, grid, left_x, top_y, resolution, step_length_list, num_steps_list, num_columns, num_rows, curves_made_before, backwards_traversal, random, addition_values] = e.data.args;
             curves = [];
 
             PI = 3.141593;
 
-            addition_strength = .02
+            initial_velocity = random*2*PI;
 
             for (var i=0; i<x_list.length; i++) {
                 x = x_list[i];
                 y = y_list[i];
-                angle = random*2*PI;
+                velocity = initial_velocity;
                 
                 step_length = step_length_list[i];
                 num_steps = num_steps_list[i];
@@ -64,8 +64,96 @@
                         }
                         grid_angle = grid[row_index][column_index];
 
-                        angle = angleFromXY(Math.cos(angle)+addition_strength*Math.cos(grid_angle), Math.sin(angle)+addition_strength*Math.sin(grid_angle))
+                        velocity = angleFromXY(Math.cos(velocity)+addition_values[0]*Math.cos(grid_angle), Math.sin(velocity)+addition_values[0]*Math.sin(grid_angle))
 
+                        x_step = step_length * Math.cos(velocity);
+                        y_step = step_length * Math.sin(velocity);
+                        x += x_step;
+                        y += y_step;
+                    } else {
+                        break;
+                    }
+                }
+
+                if (backwards_traversal) {
+                    x = x_list[i];
+                    y = y_list[i];
+                    velocity = initial_velocity + PI;
+
+                    grid_angle = null;
+                    
+                    for (let n=0; n<num_steps; n++) {
+                        x_offset = x - left_x;
+                        y_offset = y - top_y;
+                        column_index = Math.floor(x_offset / resolution);
+                        row_index = Math.floor(y_offset / resolution);
+                        if (n>0) {
+                            points.unshift({'x' : x, 'y' : y});
+                        }
+                        if (column_index>=0 && row_index>=0 && column_index<num_columns && row_index<num_rows && grid[row_index][column_index] != null) {
+                            if (grid_angle == null) {
+                                grid_angle = ((grid[row_index][column_index] + PI)%(PI*2));
+                            }
+                            grid_angle = grid[row_index][column_index];
+
+                            velocity = angleFromXY(Math.cos(velocity)+addition_values[0]*Math.cos(grid_angle), Math.sin(velocity)+addition_values[0]*Math.sin(grid_angle))
+
+                            x_step = step_length * Math.cos(velocity);
+                            y_step = step_length * Math.sin(velocity);
+                            x += x_step;
+                            y += y_step;
+                        } else {
+                            break;
+                        }
+                    }
+                }
+                curves.push(points);
+            }
+            self.postMessage({"curves" : curves, "curves_made_before" : curves_made_before});
+        };
+    </script>
+    <script id="turning_worker" type="javascript/worker">
+        function abs(value) {
+            if (value >= 0) {
+                return value
+            } else {
+                return -1*value;
+            }
+        }
+
+        self.onmessage = function(e) {
+            [x_list, y_list, grid, left_x, top_y, resolution, step_length_list, num_steps_list, num_columns, num_rows, curves_made_before, backwards_traversal, random, addition_values] = e.data.args;
+            curves = [];
+
+            PI = 3.141593;
+
+            initial_angle = random*2*PI;
+
+            for (var i=0; i<x_list.length; i++) {
+                x = x_list[i];
+                y = y_list[i];
+                angle = initial_angle;
+                
+                step_length = step_length_list[i];
+                num_steps = num_steps_list[i];
+                
+                grid_angle = null;
+
+                points = [];
+                for (let n=0; n<num_steps; n++) {
+                    x_offset = x - left_x;
+                    y_offset = y - top_y;
+                    column_index = Math.floor(x_offset / resolution);
+                    row_index = Math.floor(y_offset / resolution);
+                    points.push({'x' : x, 'y' : y});
+                    if (column_index>=0 && row_index>=0 && column_index<num_columns && row_index<num_rows && grid[row_index][column_index] != null) {
+                        if (grid_angle == null) {
+                            grid_angle = grid[row_index][column_index];
+                        }
+                        grid_angle = grid[row_index][column_index];
+                        
+                        angle = (angle+addition_values[0]*grid_angle) % (2*PI);
+                        
                         x_step = step_length * Math.cos(angle);
                         y_step = step_length * Math.sin(angle);
                         x += x_step;
@@ -78,7 +166,7 @@
                 if (backwards_traversal) {
                     x = x_list[i];
                     y = y_list[i];
-                    velocity = random*2*PI;
+                    angle = initial_angle + PI;
 
                     grid_angle = null;
                     
@@ -87,14 +175,16 @@
                         y_offset = y - top_y;
                         column_index = Math.floor(x_offset / resolution);
                         row_index = Math.floor(y_offset / resolution);
-                        points.unshift({'x' : x, 'y' : y});
+                        if (n>0) {
+                            points.unshift({'x' : x, 'y' : y});
+                        }
                         if (column_index>=0 && row_index>=0 && column_index<num_columns && row_index<num_rows && grid[row_index][column_index] != null) {
                             if (grid_angle == null) {
                                 grid_angle = ((grid[row_index][column_index] + PI)%(PI*2));
                             }
                             grid_angle = grid[row_index][column_index];
-
-                            angle = angleFromXY(Math.cos(angle)+addition_strength*Math.cos(grid_angle), Math.sin(angle)+addition_strength*Math.sin(grid_angle))
+                            
+                            angle = (angle+addition_values[0]*grid_angle) % (2*PI);
 
                             x_step = step_length * Math.cos(angle);
                             y_step = step_length * Math.sin(angle);
@@ -110,7 +200,7 @@
             self.postMessage({"curves" : curves, "curves_made_before" : curves_made_before});
         };
     </script>
-    <script id="angular_worker" type="javascript/worker">
+    <script id="spiral_worker" type="javascript/worker">
         function abs(value) {
             if (value >= 0) {
                 return value
@@ -119,19 +209,38 @@
             }
         }
 
+        function angleFromXY(x, y) {
+            if (x == 0) {
+                if (y >= 0) {
+                    return PI / 2;
+                } else {
+                    return 3 * PI / 2;
+                }
+            }
+
+            var theta = (Math.atan(y / x)) + 2 * PI;
+            if (x < 0) {
+                theta += PI;
+            }
+            return theta % (2*PI);
+        }
+
         self.onmessage = function(e) {
-            [x_list, y_list, grid, left_x, top_y, resolution, step_length_list, num_steps_list, num_columns, num_rows, curves_made_before, backwards_traversal, random] = e.data.args;
+            [x_list, y_list, grid, left_x, top_y, resolution, step_length_list, num_steps_list, num_columns, num_rows, curves_made_before, backwards_traversal, random, addition_values] = e.data.args;
             curves = [];
 
             PI = 3.141593;
 
-            addition_strength = .04
+            initial_angle = random*2*PI;
+            
+            addition_per_step = addition_values[0]+(random*100)%1*(addition_values[1] - addition_values[0]);
+            grid_weight = addition_values[2]+(random*10000)%1*(addition_values[3] - addition_values[2]);
 
             for (var i=0; i<x_list.length; i++) {
                 x = x_list[i];
                 y = y_list[i];
-                velocity = random*2*PI;
-                
+                angle = initial_angle;
+
                 step_length = step_length_list[i];
                 num_steps = num_steps_list[i];
                 
@@ -150,10 +259,13 @@
                         }
                         grid_angle = grid[row_index][column_index];
                         
-                        velocity = (velocity+addition_strength*grid_angle) % (2*PI);
+                        angle = (angle+addition_per_step) % (2*PI);
+
+                        function_angle = angleFromXY(Math.cos(angle)+grid_weight*Math.cos(grid_angle), Math.sin(angle)+grid_weight*Math.sin(grid_angle))
                         
-                        x_step = step_length * Math.cos(velocity);
-                        y_step = step_length * Math.sin(velocity);
+
+                        x_step = step_length * Math.cos(function_angle);
+                        y_step = step_length * Math.sin(function_angle);
                         x += x_step;
                         y += y_step;
                     } else {
@@ -164,7 +276,7 @@
                 if (backwards_traversal) {
                     x = x_list[i];
                     y = y_list[i];
-                    velocity = random*2*PI;
+                    angle = initial_angle;
 
                     grid_angle = null;
                     
@@ -173,17 +285,22 @@
                         y_offset = y - top_y;
                         column_index = Math.floor(x_offset / resolution);
                         row_index = Math.floor(y_offset / resolution);
-                        points.unshift({'x' : x, 'y' : y});
+                        if (n>0) {
+                            points.unshift({'x' : x, 'y' : y});
+                        }
                         if (column_index>=0 && row_index>=0 && column_index<num_columns && row_index<num_rows && grid[row_index][column_index] != null) {
                             if (grid_angle == null) {
                                 grid_angle = ((grid[row_index][column_index] + PI)%(PI*2));
                             }
-                            grid_angle = ((grid[row_index][column_index] + PI)%(PI*2));
+                            grid_angle = grid[row_index][column_index];
                             
-                            velocity = (velocity+addition_strength*grid_angle) % (2*PI);
+                            angle = (angle-addition_per_step) % (2*PI);
 
-                            x_step = step_length * Math.cos(velocity);
-                            y_step = step_length * Math.sin(velocity);
+                            function_angle = angleFromXY(Math.cos(angle)+grid_weight*Math.cos(grid_angle), Math.sin(angle)+grid_weight*Math.sin(grid_angle))
+
+
+                            x_step = step_length * Math.cos(function_angle + PI);
+                            y_step = step_length * Math.sin(function_angle + PI);
                             x += x_step;
                             y += y_step;
                         } else {
@@ -255,7 +372,9 @@
                         y_offset = y - top_y;
                         column_index = Math.floor(x_offset / resolution);
                         row_index = Math.floor(y_offset / resolution);
-                        points.unshift({'x' : x, 'y' : y});
+                        if (n>0) {
+                            points.unshift({'x' : x, 'y' : y});
+                        }
                         if (column_index>=0 && row_index>=0 && column_index<num_columns && row_index<num_rows && grid[row_index][column_index] != null) {
                             if (grid_angle == null) {
                                 grid_angle = ((grid[row_index][column_index] + PI)%(PI*2));
@@ -280,142 +399,524 @@
         };
     </script>
     <script type="text/javascript">
-        // Define Grid
-        // Place curves
-            // Position
-            // Number of curves
-        // Curves Respond to Grid
-            // Turning
-            // Responses to other curves
-        // Drawing/Style
-            // Length
-            // Width
-            // Color
-            
+        class Template {
+            static Perlin = new Template("perlin")
+            static Circles = new Template("circles")
+            static Squares = new Template("squares")
+            static Spirals = new Template("spirals")
+            static Cardioids = new Template("cardioids")
+            static Roses = new Template("roses")
 
+            static Normal = new Template("normal")
+            static Velocity = new Template("velocity")
+            static Turning = new Template("turning")
+
+            static Slinkies = new Template("slinkies")
+
+            constructor(name) {
+                this.name = name;
+            }
+
+            // Given row and column, return an angle. theta_offset will rotate the entire grid by a value, a is a number needed for certain shapes (number of petals, etc)
+            static getAngle = function(row, col, a, theta_offset) {
+                // Where center is (0,0)
+                var x = (col - num_columns / 2);
+                var y = (row - num_rows / 2);
+
+                // Processing's noise() works best when the step between
+                // points is approximately 0.005, so scale down to that
+                var scaled_x = col * .005
+                var scaled_y = row * .005
+                // translate the noise value to an angle (betwen 0 and 2 * PI)
+                // 3rd argument increases complexity as it gets smaller? Default to 1
+                var angle = map(noise(scaled_x, scaled_y), 0, 1, 0, 2*PI);
+                //angle = roundAngleTo(angle, PI/6);
+                
+                
+                //var angle = PI;
+
+                // Polar Coordinates -------------------------
+                var theta = (angleFromXY(x, y) - theta_offset) % (2*PI);
+                var r = sqrt(Math.pow((row - num_rows / 2), 2) + Math.pow((col - num_columns / 2), 2));
+                
+
+                // // Can create some cool effects
+                // theta *= r/100;
+
+                
+
+                // angle = theta + PI;
+                
+                // // Concentric Circles
+                // angle = theta + PI / 2;
+
+                // // Add to Circles for Concentric Rectangles
+                // angle = roundAngleTo(angle, PI/2);
+
+                // // Flower, where a-2 is the number of petals
+                // // a is defined randomly above
+                // a = 9;
+                // angle = a/2*theta;
+
+                // // Spiralish
+                // angle = angleFromXY(1,(Math.tan(theta)+theta)/(1-theta*Math.tan(theta)))
+
+                // angle = (x<0 && y<0) ? -2*theta/2 : -2*theta/2;
+
+                // a = 20;
+                // angle = (Math.acos((dist-a)/a)+PI/1) % (2*PI);
+
+
+                // // Pulls lines in to center
+                // // Add this to circles for cool spirals
+                // h_pull_power = 1;
+                // v_pull_power = 1/8*h_pull_power;
+                // vector_pull = [Math.cos(angle) - h_pull_power * Math.cos(theta), Math.sin(angle) - v_pull_power * Math.sin(theta)]
+                // angle = angleFromXY(vector_pull[0], vector_pull[1]);
+                
+                // // ROSES
+                // // s defines petal stretch
+                // // 2a defines petal number 
+                // s = 1
+                // a = 1
+                // angle = Math.atan((a*Math.cos(a*theta)*Math.sin(theta)+Math.sin(a*theta)*Math.cos(theta))/(a*Math.cos(a*theta)*Math.cos(theta)-Math.sin(a*theta)*Math.sin(theta)))
+
+                // // LOGARITHMIC SPIRAL
+                // // smaller b = more spiraling
+                // b = .5;
+                // angle = Math.atan((Math.tan(theta)+1/b)/(1-Math.tan(theta)/b))
+                
+                return (angle + theta_offset) % (2 * PI);
+            }
+
+            runFunction(args) {
+                switch (this.name) {
+                    case "perlin":
+                        this.perlin(args);
+                        break;
+                    case "circles":
+                        this.circles(args);
+                        break;
+                    case "squares":
+                        this.squares(args);
+                        break;
+                    case "spirals":
+                        this.spirals(args);
+                        break;
+                    case "cardioids":
+                        this.cardioids(args);
+                        break;
+                    case "roses":
+                        this.roses(args);
+                        break;
+                    case "normal":
+                        this.normal(args);
+                        break;
+                    case "velocity":
+                        this.velocity(args);
+                        break;
+                    case "turning":
+                        this.turning(args);
+                        break;
+                    case "slinkies":
+                        this.slinkies(args);
+                        break;
+                    default:
+                        break;
+
+                }
+            }
+
+            perlin(args) {
+                collision_removal = false;
+                min_length = 100;
+                stroke_spacing = 0;
+
+                backwards_traversal = true;
+                self_collision_removal = false;
+                center_destruction = false;
+
+                curve_type_index = 0;                
+
+                //background_color = null;
+                total_curves = 4000;
+
+                min_thickness = 2;
+                max_thickness = 2;
+
+                length_of_step = .5;
+                step_min = 100;
+                step_max = 150;
+                
+                Template.getAngle = function(row, col, a, theta_offset) {
+                    //return (default_angle + theta_offset)
+                    
+                    // Processing's noise() works best when the step between
+                    // points is approximately 0.005, so scale down to that
+                    var scaled_x = col * .005
+                    var scaled_y = row * .005
+                    // translate the noise value to an angle (betwen 0 and 2 * PI)
+                    // 3rd argument increases complexity as it gets smaller? Default to 1
+                    var angle = map(noise(scaled_x, scaled_y), 0, 1, 0, 2*PI);
+
+                    //angle = roundAngleTo(angle, PI/6);
+
+                    return (angle + theta_offset) % (2 * PI);
+                }
+            }
+
+            circles(args) {
+                Template.getAngle = function(row, col, a, theta_offset) {
+                    // Polar Coordinates -------------------------
+                    var x = (col - num_columns / 2);
+                    var y = (row - num_rows / 2);
+                    var theta = (angleFromXY(x, y) - theta_offset) % (2*PI);
+                    var r = sqrt(Math.pow((row - num_rows / 2), 2) + Math.pow((col - num_columns / 2), 2));
+                
+                    var angle = theta + PI / 2;
+
+                    return (angle + theta_offset) % (2 * PI);
+                }
+            }
+            
+            squares(args) {
+                Template.getAngle = function(row, col, a, theta_offset) {
+                    // Polar Coordinates -------------------------
+                    var x = (col - num_columns / 2);
+                    var y = (row - num_rows / 2);
+                    var theta = (angleFromXY(x, y) - theta_offset) % (2*PI);
+                    var r = sqrt(Math.pow((row - num_rows / 2), 2) + Math.pow((col - num_columns / 2), 2));
+                
+                    var angle = theta + PI / 2;
+                    angle = roundAngleTo(angle, PI/2);
+
+                    return (angle + theta_offset) % (2 * PI);
+                }
+            }
+
+            spirals(args) {
+                Template.getAngle = function(row, col, a, theta_offset) {
+                    // Polar Coordinates -------------------------
+                    var x = (col - num_columns / 2);
+                    var y = (row - num_rows / 2);
+                    var theta = (angleFromXY(x, y) - theta_offset) % (2*PI);
+                    var r = sqrt(Math.pow((row - num_rows / 2), 2) + Math.pow((col - num_columns / 2), 2));
+                
+                    var angle = theta + PI / 2;
+
+                    var h_pull_power = 1;
+                    var v_pull_power = 1/8*h_pull_power;
+                    var vector_pull = [Math.cos(angle) - h_pull_power * Math.cos(theta), Math.sin(angle) - v_pull_power * Math.sin(theta)]
+                    angle = angleFromXY(vector_pull[0], vector_pull[1]);
+
+                    return (angle + theta_offset) % (2 * PI);
+                }
+            }
+
+            cardioids(args) {
+                Template.getAngle = function(row, col, a, theta_offset) {    
+                    // Polar Coordinates -------------------------
+                    var x = (col - num_columns / 2);
+                    var y = (row - num_rows / 2);
+                    var theta = (angleFromXY(x, y) - theta_offset) % (2*PI);
+                    var r = sqrt(Math.pow((row - num_rows / 2), 2) + Math.pow((col - num_columns / 2), 2));
+
+                    // Flower, where a-2 is the number of petals
+                    // a is defined randomly above
+                    a = 9;
+                    var angle = a/2*theta;
+
+                    return (angle + theta_offset) % (2 * PI);
+                }
+            }
+
+            roses(args) {
+                Template.getAngle = function(row, col, a, theta_offset) {    
+                    // Polar Coordinates -------------------------
+                    var x = (col - num_columns / 2);
+                    var y = (row - num_rows / 2);
+                    var theta = (angleFromXY(x, y) - theta_offset) % (2*PI);
+                    var r = sqrt(Math.pow((row - num_rows / 2), 2) + Math.pow((col - num_columns / 2), 2));
+
+                    // ROSES
+                    // s defines petal stretch
+                    // 2a defines petal number 
+                    var s = 1
+                    a = 1
+                    angle = Math.atan((a*Math.cos(a*theta)*Math.sin(theta)+Math.sin(a*theta)*Math.cos(theta))/(a*Math.cos(a*theta)*Math.cos(theta)-Math.sin(a*theta)*Math.sin(theta)))
+
+
+                    return (angle + theta_offset) % (2 * PI);
+                }
+            }
+
+            normal(args) {
+                curve_type_index = 0;
+            }
+
+            velocity(args) {
+                curve_type_index = 1;
+            }
+
+            turning(args) {
+                Template.getAngle = function(row, col, a, theta_offset) {
+                    // Processing's noise() works best when the step between
+                    // points is approximately 0.005, so scale down to that
+                    var scaled_x = col * .005
+                    var scaled_y = row * .005
+                    // translate the noise value to an angle (betwen 0 and 2 * PI)
+                    // 3rd argument increases complexity as it gets smaller? Default to 1
+                    var angle = map(noise(scaled_x, scaled_y), 0, 1, 0, 2*PI);
+
+                    return (angle + theta_offset) % (2 * PI);
+                }
+                curve_type_index = 2;
+            }
+
+            slinkies(args) {
+                // In this case, addition_values is a list of how fast
+                addition_values = [PI/16, PI/8, 2, 3];
+                stroke_spacing = 4;
+
+                backwards_traversal = true;
+                self_collision_removal = false;
+                center_destruction = false;
+
+                collision_removal = false;
+                min_length = 100;
+                
+                
+                Template.getAngle = function(row, col, a, theta_offset) {
+                    //return (default_angle + theta_offset)
+                    
+                    // Processing's noise() works best when the step between
+                    // points is approximately 0.005, so scale down to that
+                    var scaled_x = col * .005
+                    var scaled_y = row * .005
+                    // translate the noise value to an angle (betwen 0 and 2 * PI)
+                    // 3rd argument increases complexity as it gets smaller? Default to 1
+                    var angle = map(noise(scaled_x, scaled_y), 0, 1, 0, 2*PI);
+
+                    //angle = roundAngleTo(angle, PI/6);
+
+                    return (angle + theta_offset) % (2 * PI);
+                }
+
+                curve_type_index = 3;                
+
+                //background_color = null;
+                total_curves = 100;
+
+                min_thickness = 3;
+                max_thickness = 6;
+
+                length_of_step = 4;
+                step_min = 1000;
+                step_max = 1500;
+            }
+        }
+
+        var drawings_made = 0;
+        var total_drawings = 1;
+        var save_and_restart = true;
+
+        var save_data = true;
+        var drawing_data = [];
+
+        var template = Template.Perlin;
+
+
+        // STEPS -------------------------------------------------------------------------------------------------
+            // Define Grid
+            // Place curves
+                // Position
+                // Number of curves
+            // Curves Respond to Grid
+                // Turning
+                // Responses to other curves
+            // Drawing/Style
+                // Length
+                // Width
+                // Color
 
         // HOW CURVES RESPOND TO GRID ----------------------------------------------------------------------------
             // Specifies how a curve responds to the angles of the grid
-                var curve_types = ['#multi_curve_worker','#velocity_worker']
+                var curve_types = ['#multi_curve_worker','#velocity_worker', '#turning_worker', '#spiral_worker']
                 var curve_type_index = 0;
+                // For velocity and turning workers
+                var addition_values = [.05];
 
             // Settings for early curve termination
+                var backwards_traversal = false;    
+            
                 var collision_removal = true;
                 var same_color_allowed = false;
                 var self_collision_removal = true; // WIP
 
-                var backwards_traversal = false;
-
-                var center_destruction = false;
-                var distance_to_center = 10;
+                var center_destruction = true;
+                var distance_to_center = 5;
                 
 
                 // Drawn map is an array where each curve draws its own ID onto the grid
-                var drawn_map = [];
+                var drawn_map;
                 // Color map is an array where each curve draws its own COLOR onto the grid
-                var color_map = [];
+                var color_map;
                 // Ensures that curves aren't drawn if they are killed while still too short
-                var min_length = 10;
+                var min_length = 20;
 
         
         // STYLE -------------------------------------------------------------------------------------------------
             // Width of lines
-                var min_thickness = 3;
-                var max_thickness = 6;
+                var min_thickness = 1;
+                var max_thickness = 2;
             // Invisible extra width for adding space between lines
                 var stroke_spacing = 0;
 
-            // Number of total curves
-                var total_curves = 4000
 
+            // Number of total threads to calculate curves (lower this number if the page runs out of data)
+                var total_workers = 800;
+            // Number of total curves
+                var total_curves = 4000;
+            // Counts sucessful drawings
+                var workers_complete;
             // Length of each step
-                var length_of_step = 1;
+                var length_of_step = .5;
             // Range for number of steps per curve
-                var step_min = 100;
-                var step_max = 300;
+                var step_min = 250;
+                var step_max = 350;
 
             // Will fill with colors in the color palette
-                var chosen_colors = [];
+                var chosen_colors;
+
+
+            var background_color = null;
+            
 
 
         // DEFINING GRID -----------------------------------------------------------------------------------------
-            var left_x;
-            var right_x;
-            var top_y;
-            var bottom_y;
+            // Max and min X and Y values
+                var left_x;
+                var right_x;
+                var top_y;
+                var bottom_y;
 
-            var decimal_overhang = .1;
+            // Extra space outside the drawn screen to make curves go past the image borders
+                var decimal_overhang = .1;
 
-            var resolution;
-            var num_columns;
-            var num_rows;
-            var grid;
-            var default_angle;
+            // Converting screen coordinates to coordiantes in a smaller array
+                var resolution;
+                var num_columns;
+                var num_rows;
+                var grid;
 
+            var default_angle = 0;
+
+            var getAngle;
             var a;
 
-        // Given row and column, return an angle. theta_offset will rotate the entire grid by a value, a is a number needed for certain shapes (number of petals, etc)
-        function getAngle(row, col, a, theta_offset) {
-            // Where center is (0,0)
-            x = (col - num_columns / 2);
-            y = (row - num_rows / 2);
-
-            // Processing's noise() works best when the step between
-            // points is approximately 0.005, so scale down to that
-            scaled_x = col * .005
-            scaled_y = row * .005
-            // translate the noise value to an angle (betwen 0 and 2 * PI)
-            angle = map(noise(scaled_x, scaled_y), 0, 1, 0, 2*PI);
-            //angle = roundAngleTo(angle, PI/6);
-            //angle = random()*100/50*PI;
-
-            // Polar Coordinates -------------------------
-            var theta = (angleFromXY(x, y) - theta_offset) % (2*PI);
-
-            r = sqrt(Math.pow((row - num_rows / 2), 2) + Math.pow((col - num_columns / 2), 2));
-
-            // angle = theta + PI;
+        function setup() {
+            background_color = new Color(0,0,0);
+            template.runFunction([]);
             
-            // Concentric Circles
-            angle = theta + PI / 2;
+            // P5.JS SETUP ---------------------------------------------------------
+            createCanvas(800, 800);
+            colorMode(HSL, 360);
+            setupCustom();
+        }
 
-            // // Add to Circles for Concentric Rectangles
-            // angle = roundAngleTo(angle, PI/2);
+        function setupCustom() {
+            // GENERATE COLORS -----------------------------------------------------
+            chosen_colors = [];
+            setChosenColors(3, 2, 2, 2, 3, 3);
 
-            // // Flower, where a-2 is the number of petals
-            // // a is defined randomly above
-            // a = 5;
-            // angle = a/2*theta;
+            if (background_color == null) {
+                background_color = new Color(chosen_colors[0].hue,chosen_colors[0].saturation,chosen_colors[0].lightness);
+            }
 
-            // // Spiral
-            // angle = Math.atan((Math.tan(theta)+theta)/(1-theta*Math.tan(theta)))
-
-            // angle = (x<0 && y<0) ? -2*theta/2 : -2*theta/2;
-
-            // a = 20;
-            // angle = (Math.acos((dist-a)/a)+PI/1) % (2*PI);
+            workers_complete = 0;
+            noiseSeed(Math.floor(lerp(0,100000, random())));
 
 
-            // // Pulls lines in to center
-            // // Add this to circles for cool spirals
-            // h_pull_power = 1;
-            // v_pull_power = 1/4*h_pull_power;
-            // vector_pull = [Math.cos(angle) - h_pull_power * Math.cos(theta), Math.sin(angle) - v_pull_power * Math.sin(theta)]
-            // angle = angleFromXY(vector_pull[0], vector_pull[1]);
-            
-            // // ROSES
-            // // s defines petal stretch
-            // // 2a defines petal number 
-            // s = 1
-            // a = 1
-            // angle = Math.atan((a*Math.cos(a*theta)*Math.sin(theta)+Math.sin(a*theta)*Math.cos(theta))/(a*Math.cos(a*theta)*Math.cos(theta)-Math.sin(a*theta)*Math.sin(theta)))
+            // DEFINING SCREEN BOUNDARIES ------------------------------------------
+            left_x = Math.floor(width * -(decimal_overhang));
+            right_x = Math.floor(width * (1 + (decimal_overhang)));
+            top_y = Math.floor(height * -(decimal_overhang));
+            bottom_y = Math.floor(height * (1 + (decimal_overhang)));
 
-            // // LOGARITHMIC SPIRAL
-            // // smaller b = more spiraling
-            // b = .5;
-            // angle = Math.atan((Math.tan(theta)+1/b)/(1-Math.tan(theta)/b))
-            
-            return (angle + theta_offset) % (2 * PI);
+            // CREATING MAPS FOR DETECTING COLLISIONS ------------------------------
+            drawn_map = [];
+            for (let row = 0; row < Math.floor(bottom_y - top_y); row++) {
+                var row_list = [];
+                for (let col = 0; col < Math.floor(right_x - left_x); col++) {
+                    row_list.push(0);
+                }
+                drawn_map.push(row_list);
+            }
+
+            color_map = [];
+            for (let row = 0; row < Math.floor(bottom_y - top_y); row++) {
+                var row_list = [];
+                for (let col = 0; col < Math.floor(right_x - left_x); col++) {
+                    row_list.push(0);
+                }
+                color_map.push(row_list);
+            }
+
+            // CREATING ANGLE GRID -------------------------------------------------
+            resolution = Math.floor(width * 0.005);
+            num_columns = (right_x - left_x) / resolution;
+            num_rows = (bottom_y - top_y) / resolution;
+            grid = [];
+            for (let i = 0; i < num_columns; i++) {
+                grid.push([]);
+            }
+
+            // Fill with angles
+            theta_offset = random()*2*PI
+            a = Math.floor(lerp(1, 15, random()));
+            for (let row = 0; row < num_rows; row++) {
+                for (let col = 0; col < num_columns; col++) {
+                    grid[row][col] = Template.getAngle(row, col, a, theta_offset);
+                }
+            }
+        }
+
+        function draw() {
+            background(background_color.hue, background_color.saturation, background_color.lightness);
+            noFill();
+            noLoop();
+
+            var curves_made = 0;
+            var curves_made_before = 0;
+
+            curve_per_worker = int(total_curves / total_workers);
+            for (let i = 0; i < min(total_workers, total_curves); i += 1) {
+                w = getWorker();
+                curves_for_this_worker = curve_per_worker;
+                if (i < total_curves % total_workers) {
+                    curves_for_this_worker++;
+                }
+
+                x_list = [];
+                y_list = [];
+                step_length_list = [];
+                num_steps_list = [];
+                for (let j = 0; j < curves_for_this_worker; j += 1) {
+                    [x,y] = randomCoordinates();
+                    //[x, y] = getStartCoordinates(curves_made, total_curves);
+                    //[x, y] = findWhiteSpace(1, 1000);
+
+                    x_list.push(x);
+                    y_list.push(y);
+
+                    var step_length = length_of_step;
+                    step_length_list.push(step_length);
+                    var num_steps = Math.floor(lerp(step_min, step_max, random()));
+                    num_steps_list.push(num_steps);
+                    curves_made += 1;
+                }
+                w.postMessage( { "args": [x_list, y_list, grid, left_x, top_y, resolution, step_length_list, num_steps_list, num_columns, num_rows, curves_made - curves_for_this_worker, backwards_traversal, random(), addition_values] } );
+            }
         }
 
         // HSL color storage
@@ -470,7 +971,7 @@
             }
 
 
-            var set_index = 4;
+            var set_index = 2;
             for (let set = 0; set < sets; set++) {
                 var color_index = 8;
                 for (let color = 0; color < colors_per_set; color++) {
@@ -513,20 +1014,18 @@
         // WIP, checks if ID occurs in the MAP at a certain DIRECTION and DISTANCE away from position (X, Y)
         function checkSelfCollision(x, y, distance, direction, map, id) {
             FOV = PI
-            distance += -2
+            distance += 4
             
             for (let radian=direction-FOV/2; radian <= direction-FOV/2; radian+= PI/4) {
-                proposed_x = Math.floor(x+Math.cos(radians)*distance)
-                proposed_y = Math.floor(y+Math.sin(radians)*distance)
-                
+                proposed_x = Math.floor(x+Math.cos(radian)*distance)
+                proposed_y = Math.floor(y+Math.sin(radian)*distance)
+
                 if (proposed_y >= 0 && proposed_y < map.length && proposed_x >= 0 && proposed_x < map[0].length) {
                     if (map[proposed_y][proposed_x] == id) {
                         return true;
-                        console.log("hello")
                     }
                 }
             }
-
             return false;
         }
 
@@ -559,11 +1058,23 @@
                     color = chosen_colors[floor(random() * chosen_colors.length)]
                     stroke(color.hue, color.saturation, color.lightness);
 
+                    last_point_x = -1000;
+                    last_point_y = -1000;
+
                     beginShape();
-                    curveVertex(points[0].x, points[0].y);
                     var continue_curve = true;
                     for (let i = 0; (i < points.length && continue_curve); i++) {
-                        curveVertex(points[i].x, points[i].y);
+                        if (i > 0) {
+                            if (abs(Math.floor(points[i].x) - Math.floor(last_point_x)) > .0001 || abs(Math.floor(points[i].y) - Math.floor(last_point_y)) > .0001) {
+                                curveVertex(Math.round(points[i].x*1000)/1000,Math.round(points[i].y*1000)/1000);
+                                last_point_x = points[i].x;
+                                last_point_y = points[i].y;
+                            } 
+                        } else {
+                            curveVertex(points[i].x,points[i].y);
+                            last_point_x = points[i].x;
+                            last_point_y = points[i].y;
+                        }
                         
                         // COLLISIONS WITH OTHER CURVES ---------------------------------------------------------------------------------------------
                         if (collision_removal) {    
@@ -611,8 +1122,31 @@
                     if (continue_curve) {
                         endShape();
                     }
-                    // Kill worker when done drawing
-                    w.terminate();
+                    
+                    
+                }
+                // Kill worker when done drawing
+                w.terminate();
+
+                workers_complete += 1
+                 
+                if (workers_complete == total_workers-1 && save_and_restart) {
+                    saveCanvas('curve', 'jpg');
+                    drawings_made++;
+
+                    if (save_data) {
+                        drawing_data.push("drawn");
+                    }
+
+                    if (drawings_made < total_drawings) {
+                        setupCustom();
+                        draw();
+                    } else if (save_data) {
+                        var a = document.createElement("a");
+                        a.href = window.URL.createObjectURL(new Blob([drawing_data.join("\n")], {type: "text/plain"}));
+                        a.download = "demo.txt";
+                        a.click()
+                    }
                 }
             };
             return w;
@@ -680,108 +1214,6 @@
 
             return [x, y];
         }
-
-
-        function setup() {
-            // P5.JS SETUP ---------------------------------------------------------
-            createCanvas(800, 800);
-            colorMode(HSL, 360);
-
-            // GENERATE COLORS -----------------------------------------------------
-            setChosenColors(3, 2, 2, 2, 3, 3);
-
-            // DEFINING SCREEN BOUNDARIES ------------------------------------------
-            left_x = Math.floor(width * -(decimal_overhang));
-            right_x = Math.floor(width * (1 + (decimal_overhang)));
-            top_y = Math.floor(height * -(decimal_overhang));
-            bottom_y = Math.floor(height * (1 + (decimal_overhang)));
-
-            // CREATING MAPS FOR DETECTING COLLISIONS ------------------------------
-            for (let row = 0; row < Math.floor(bottom_y - top_y); row++) {
-                var row_list = [];
-                for (let col = 0; col < Math.floor(right_x - left_x); col++) {
-                    row_list.push(0);
-                }
-                drawn_map.push(row_list);
-            }
-
-            for (let row = 0; row < Math.floor(bottom_y - top_y); row++) {
-                var row_list = [];
-                for (let col = 0; col < Math.floor(right_x - left_x); col++) {
-                    row_list.push(0);
-                }
-                color_map.push(row_list);
-            }
-
-            // CREATING ANGLE GRID -------------------------------------------------
-            resolution = Math.floor(width * 0.005);
-            num_columns = (right_x - left_x) / resolution;
-            num_rows = (bottom_y - top_y) / resolution;
-            grid = [];
-            for (let i = 0; i < num_columns; i++) {
-                grid.push([]);
-            }
-            default_angle = PI * 0.25;
-
-            // // Filling with default values
-            // for (let col = 0; col < num_columns; col++) {
-            //     for (let row = 0; row < num_rows; row++) {
-            //         grid[col][row] = default_angle;
-            //     }
-            // }
-
-            // Fill with real angles
-            theta_offset = random()*2*PI
-            a = Math.floor(lerp(1, 15, random()));
-            for (let row = 0; row < num_rows; row++) {
-                for (let col = 0; col < num_columns; col++) {
-                    grid[row][col] = getAngle(row, col, a, theta_offset);
-                }
-            }
-        }
-
-        function draw() {
-            background(chosen_colors[0].hue, chosen_colors[0].saturation, chosen_colors[0].lightness);
-            background(0)
-            noFill();
-            noLoop();
-
-            var total_workers = 400;
-
-            var curves_made = 0;
-            var curves_made_before = 0;
-
-            curve_per_worker = int(total_curves / total_workers);
-            for (let i = 0; i < min(total_workers, total_curves); i += 1) {
-                w = getWorker();
-                curves_for_this_worker = curve_per_worker;
-                if (i < total_curves % total_workers) {
-                    curves_for_this_worker++;
-                }
-
-                x_list = [];
-                y_list = [];
-                step_length_list = [];
-                num_steps_list = [];
-
-                for (let j = 0; j < curves_for_this_worker; j += 1) {
-                    [x,y] = randomCoordinates();
-                    //[x, y] = getStartCoordinates(curves_made, total_curves);
-                    //[x, y] = findWhiteSpace(1, 1000);
-
-                    x_list.push(x);
-                    y_list.push(y);
-
-                    var step_length = length_of_step;
-                    step_length_list.push(step_length);
-                    var num_steps = Math.floor(lerp(step_min, step_max, random()));
-                    num_steps_list.push(num_steps);
-                    curves_made += 1;
-                }
-                w.postMessage({ "args": [x_list, y_list, grid, left_x, top_y, resolution, step_length_list, num_steps_list, num_columns, num_rows, curves_made - curves_for_this_worker, backwards_traversal, random()] });
-            }
-        }
     </script>
 </body>
-
 </html>
