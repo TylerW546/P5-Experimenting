@@ -200,7 +200,7 @@
             self.postMessage({"curves" : curves, "curves_made_before" : curves_made_before});
         };
     </script>
-    <script id="spiral_worker" type="javascript/worker">
+    <script id="slinky_worker" type="javascript/worker">
         function abs(value) {
             if (value >= 0) {
                 return value
@@ -399,350 +399,150 @@
         };
     </script>
     <script type="text/javascript">
-        class Template {
-            static Perlin = new Template("perlin")
-            static Circles = new Template("circles")
-            static Squares = new Template("squares")
-            static Spirals = new Template("spirals")
-            static Cardioids = new Template("cardioids")
-            static Roses = new Template("roses")
+        // ANGLE TEMPLATES ----------------------------------------------------------------------------------------------------------------
+        function default_template(row, col, theta_offset, args) {
+            return (default_angle + theta_offset)% (2 * PI);
+        }
+        
+        function perlin(row, col, theta_offset, args) {
+            // Processing's noise() works best when the step between
+            // points is approximately 0.005, so scale down to that
+            var scaled_x = col * args.col_scaling;
+            var scaled_y = row * args.row_scaling;
+            // translate the noise value to an angle (betwen 0 and 2 * PI)
+            // 3rd argument increases complexity as it gets smaller? Default to 1
+            var angle = map(noise(scaled_x, scaled_y), 0, 1, 0, 2*PI);
 
-            static Normal = new Template("normal")
-            static Velocity = new Template("velocity")
-            static Turning = new Template("turning")
-
-            static Slinkies = new Template("slinkies")
-
-            constructor(name) {
-                this.name = name;
-            }
-
-            // Given row and column, return an angle. theta_offset will rotate the entire grid by a value, a is a number needed for certain shapes (number of petals, etc)
-            static getAngle = function(row, col, a, theta_offset) {
-                // Where center is (0,0)
-                var x = (col - num_columns / 2);
-                var y = (row - num_rows / 2);
-
-                // Processing's noise() works best when the step between
-                // points is approximately 0.005, so scale down to that
-                var scaled_x = col * .005
-                var scaled_y = row * .005
-                // translate the noise value to an angle (betwen 0 and 2 * PI)
-                // 3rd argument increases complexity as it gets smaller? Default to 1
-                var angle = map(noise(scaled_x, scaled_y), 0, 1, 0, 2*PI);
-                //angle = roundAngleTo(angle, PI/6);
-                
-                
-                //var angle = PI;
-
-                // Polar Coordinates -------------------------
-                var theta = (angleFromXY(x, y) - theta_offset) % (2*PI);
-                var r = sqrt(Math.pow((row - num_rows / 2), 2) + Math.pow((col - num_columns / 2), 2));
-                
-
-                // // Can create some cool effects
-                // theta *= r/100;
-
-                
-
-                // angle = theta + PI;
-                
-                // // Concentric Circles
-                // angle = theta + PI / 2;
-
-                // // Add to Circles for Concentric Rectangles
-                // angle = roundAngleTo(angle, PI/2);
-
-                // // Flower, where a-2 is the number of petals
-                // // a is defined randomly above
-                // a = 9;
-                // angle = a/2*theta;
-
-                // // Spiralish
-                // angle = angleFromXY(1,(Math.tan(theta)+theta)/(1-theta*Math.tan(theta)))
-
-                // angle = (x<0 && y<0) ? -2*theta/2 : -2*theta/2;
-
-                // a = 20;
-                // angle = (Math.acos((dist-a)/a)+PI/1) % (2*PI);
-
-
-                // // Pulls lines in to center
-                // // Add this to circles for cool spirals
-                // h_pull_power = 1;
-                // v_pull_power = 1/8*h_pull_power;
-                // vector_pull = [Math.cos(angle) - h_pull_power * Math.cos(theta), Math.sin(angle) - v_pull_power * Math.sin(theta)]
-                // angle = angleFromXY(vector_pull[0], vector_pull[1]);
-                
-                // // ROSES
-                // // s defines petal stretch
-                // // 2a defines petal number 
-                // s = 1
-                // a = 1
-                // angle = Math.atan((a*Math.cos(a*theta)*Math.sin(theta)+Math.sin(a*theta)*Math.cos(theta))/(a*Math.cos(a*theta)*Math.cos(theta)-Math.sin(a*theta)*Math.sin(theta)))
-
-                // // LOGARITHMIC SPIRAL
-                // // smaller b = more spiraling
-                // b = .5;
-                // angle = Math.atan((Math.tan(theta)+1/b)/(1-Math.tan(theta)/b))
-                
-                return (angle + theta_offset) % (2 * PI);
-            }
-
-            runFunction(args) {
-                switch (this.name) {
-                    case "perlin":
-                        this.perlin(args);
-                        break;
-                    case "circles":
-                        this.circles(args);
-                        break;
-                    case "squares":
-                        this.squares(args);
-                        break;
-                    case "spirals":
-                        this.spirals(args);
-                        break;
-                    case "cardioids":
-                        this.cardioids(args);
-                        break;
-                    case "roses":
-                        this.roses(args);
-                        break;
-                    case "normal":
-                        this.normal(args);
-                        break;
-                    case "velocity":
-                        this.velocity(args);
-                        break;
-                    case "turning":
-                        this.turning(args);
-                        break;
-                    case "slinkies":
-                        this.slinkies(args);
-                        break;
-                    default:
-                        break;
-
-                }
-            }
-
-            perlin(args) {
-                collision_removal = false;
-                min_length = 100;
-                stroke_spacing = 0;
-
-                backwards_traversal = true;
-                self_collision_removal = false;
-                center_destruction = false;
-
-                curve_type_index = 0;                
-
-                //background_color = null;
-                total_curves = 4000;
-
-                min_thickness = 2;
-                max_thickness = 2;
-
-                length_of_step = .5;
-                step_min = 100;
-                step_max = 150;
-                
-                Template.getAngle = function(row, col, a, theta_offset) {
-                    //return (default_angle + theta_offset)
-                    
-                    // Processing's noise() works best when the step between
-                    // points is approximately 0.005, so scale down to that
-                    var scaled_x = col * .005
-                    var scaled_y = row * .005
-                    // translate the noise value to an angle (betwen 0 and 2 * PI)
-                    // 3rd argument increases complexity as it gets smaller? Default to 1
-                    var angle = map(noise(scaled_x, scaled_y), 0, 1, 0, 2*PI);
-
-                    //angle = roundAngleTo(angle, PI/6);
-
-                    return (angle + theta_offset) % (2 * PI);
-                }
-            }
-
-            circles(args) {
-                Template.getAngle = function(row, col, a, theta_offset) {
-                    // Polar Coordinates -------------------------
-                    var x = (col - num_columns / 2);
-                    var y = (row - num_rows / 2);
-                    var theta = (angleFromXY(x, y) - theta_offset) % (2*PI);
-                    var r = sqrt(Math.pow((row - num_rows / 2), 2) + Math.pow((col - num_columns / 2), 2));
-                
-                    var angle = theta + PI / 2;
-
-                    return (angle + theta_offset) % (2 * PI);
-                }
-            }
-            
-            squares(args) {
-                Template.getAngle = function(row, col, a, theta_offset) {
-                    // Polar Coordinates -------------------------
-                    var x = (col - num_columns / 2);
-                    var y = (row - num_rows / 2);
-                    var theta = (angleFromXY(x, y) - theta_offset) % (2*PI);
-                    var r = sqrt(Math.pow((row - num_rows / 2), 2) + Math.pow((col - num_columns / 2), 2));
-                
-                    var angle = theta + PI / 2;
-                    angle = roundAngleTo(angle, PI/2);
-
-                    return (angle + theta_offset) % (2 * PI);
-                }
-            }
-
-            spirals(args) {
-                Template.getAngle = function(row, col, a, theta_offset) {
-                    // Polar Coordinates -------------------------
-                    var x = (col - num_columns / 2);
-                    var y = (row - num_rows / 2);
-                    var theta = (angleFromXY(x, y) - theta_offset) % (2*PI);
-                    var r = sqrt(Math.pow((row - num_rows / 2), 2) + Math.pow((col - num_columns / 2), 2));
-                
-                    var angle = theta + PI / 2;
-
-                    var h_pull_power = 1;
-                    var v_pull_power = 1/8*h_pull_power;
-                    var vector_pull = [Math.cos(angle) - h_pull_power * Math.cos(theta), Math.sin(angle) - v_pull_power * Math.sin(theta)]
-                    angle = angleFromXY(vector_pull[0], vector_pull[1]);
-
-                    return (angle + theta_offset) % (2 * PI);
-                }
-            }
-
-            cardioids(args) {
-                Template.getAngle = function(row, col, a, theta_offset) {    
-                    // Polar Coordinates -------------------------
-                    var x = (col - num_columns / 2);
-                    var y = (row - num_rows / 2);
-                    var theta = (angleFromXY(x, y) - theta_offset) % (2*PI);
-                    var r = sqrt(Math.pow((row - num_rows / 2), 2) + Math.pow((col - num_columns / 2), 2));
-
-                    // Flower, where a-2 is the number of petals
-                    // a is defined randomly above
-                    a = 9;
-                    var angle = a/2*theta;
-
-                    return (angle + theta_offset) % (2 * PI);
-                }
-            }
-
-            roses(args) {
-                Template.getAngle = function(row, col, a, theta_offset) {    
-                    // Polar Coordinates -------------------------
-                    var x = (col - num_columns / 2);
-                    var y = (row - num_rows / 2);
-                    var theta = (angleFromXY(x, y) - theta_offset) % (2*PI);
-                    var r = sqrt(Math.pow((row - num_rows / 2), 2) + Math.pow((col - num_columns / 2), 2));
-
-                    // ROSES
-                    // s defines petal stretch
-                    // 2a defines petal number 
-                    var s = 1
-                    a = 1
-                    angle = Math.atan((a*Math.cos(a*theta)*Math.sin(theta)+Math.sin(a*theta)*Math.cos(theta))/(a*Math.cos(a*theta)*Math.cos(theta)-Math.sin(a*theta)*Math.sin(theta)))
-
-
-                    return (angle + theta_offset) % (2 * PI);
-                }
-            }
-
-            normal(args) {
-                curve_type_index = 0;
-            }
-
-            velocity(args) {
-                curve_type_index = 1;
-            }
-
-            turning(args) {
-                Template.getAngle = function(row, col, a, theta_offset) {
-                    // Processing's noise() works best when the step between
-                    // points is approximately 0.005, so scale down to that
-                    var scaled_x = col * .005
-                    var scaled_y = row * .005
-                    // translate the noise value to an angle (betwen 0 and 2 * PI)
-                    // 3rd argument increases complexity as it gets smaller? Default to 1
-                    var angle = map(noise(scaled_x, scaled_y), 0, 1, 0, 2*PI);
-
-                    return (angle + theta_offset) % (2 * PI);
-                }
-                curve_type_index = 2;
-            }
-
-            slinkies(args) {
-                // In this case, addition_values is a list of how fast
-                addition_values = [PI/16, PI/8, 2, 3];
-                stroke_spacing = 4;
-
-                backwards_traversal = true;
-                self_collision_removal = false;
-                center_destruction = false;
-
-                collision_removal = false;
-                min_length = 100;
-                
-                
-                Template.getAngle = function(row, col, a, theta_offset) {
-                    //return (default_angle + theta_offset)
-                    
-                    // Processing's noise() works best when the step between
-                    // points is approximately 0.005, so scale down to that
-                    var scaled_x = col * .005
-                    var scaled_y = row * .005
-                    // translate the noise value to an angle (betwen 0 and 2 * PI)
-                    // 3rd argument increases complexity as it gets smaller? Default to 1
-                    var angle = map(noise(scaled_x, scaled_y), 0, 1, 0, 2*PI);
-
-                    //angle = roundAngleTo(angle, PI/6);
-
-                    return (angle + theta_offset) % (2 * PI);
-                }
-
-                curve_type_index = 3;                
-
-                //background_color = null;
-                total_curves = 100;
-
-                min_thickness = 3;
-                max_thickness = 6;
-
-                length_of_step = 4;
-                step_min = 1000;
-                step_max = 1500;
-            }
+            return angle;
         }
 
-        var drawings_made = 0;
-        var total_drawings = 1;
-        var save_and_restart = true;
+        function circles(row, col, theta_offset, args) {
+            // Polar Coordinates -------------------------
+            var x = (col - num_columns / 2);
+            var y = (row - num_rows / 2);
+            var theta = (angleFromXY(x, y) - theta_offset) % (2*PI);
+            var r = sqrt(Math.pow((row - num_rows / 2), 2) + Math.pow((col - num_columns / 2), 2));
+        
+            var angle = theta + PI / 2;
 
-        var save_data = true;
-        var drawing_data = [];
+            return angle;
+        }
 
-        var template = Template.Perlin;
+        function flowers(row, col, theta_offset, args) {    
+            // Polar Coordinates -------------------------
+            var x = (col - num_columns / 2);
+            var y = (row - num_rows / 2);
+            var theta = (angleFromXY(x, y) - theta_offset) % (2*PI);
+            var r = sqrt(Math.pow((row - num_rows / 2), 2) + Math.pow((col - num_columns / 2), 2));
 
+            // Flower, where a-2 is the number of petals
+            var angle = args.a/2*theta;
 
-        // STEPS -------------------------------------------------------------------------------------------------
-            // Define Grid
-            // Place curves
-                // Position
-                // Number of curves
-            // Curves Respond to Grid
-                // Turning
-                // Responses to other curves
-            // Drawing/Style
-                // Length
-                // Width
-                // Color
+            return angle;
+        }
+
+        // ANGLE MODIFIER -----------------------------------------------------------------------------------------------------------------
+        function rounding(angle, row, col, theta_offset, args) {
+            return roundAngleTo(angle, args.round_value);
+        }
+
+        function pulling(angle, row, col, a, theta_offset, args) {
+            var x = (col - num_columns / 2);
+            var y = (row - num_rows / 2);
+            var theta = (angleFromXY(x, y) - theta_offset) % (2*PI);
+
+            var vector_pull = [Math.cos(angle) - args.h_pull_power * Math.cos(theta), Math.sin(angle) - args.v_pull_power * Math.sin(theta)]
+            return angleFromXY(vector_pull[0], vector_pull[1]);
+        }
+        
+        function screenFillSettings(args) {
+            collision_removal = false;
+            min_length = 100;
+            stroke_spacing = 0;
+
+            backwards_traversal = true;
+            self_collision_removal = false;
+            center_destruction = false;
+
+            curve_type_index = 0;                
+
+            //background_color = null;
+            total_curves = 4000;
+
+            min_thickness = 2;
+            max_thickness = 2;
+
+            length_of_step = .5;
+            step_min = 1000;
+            step_max = 1500;
+        }
+
+        function spacedSettings(args) {
+            collision_removal = true;
+            min_length = 10;
+            stroke_spacing = 0;
+
+            backwards_traversal = true;
+            self_collision_removal = false;
+            center_destruction = false;
+
+            curve_type_index = 0;                
+
+            //background_color = null;
+            total_curves = 4000;
+
+            min_thickness = 2;
+            max_thickness = 2;
+
+            length_of_step = .5;
+            step_min = 200;
+            step_max = 300;
+        }
+
+        function slinkySettings(args) {
+            // In this case, addition_values is a list of how fast
+            addition_values = args.addition_values; //[PI/16, PI/8, 2, 3];
+            stroke_spacing = 4;
+
+            backwards_traversal = true;
+            self_collision_removal = false;
+            center_destruction = false;
+
+            collision_removal = false;
+            min_length = 100;
+
+            curve_type_index = 3;                
+
+            //background_color = null;
+            total_curves = 100;
+
+            min_thickness = 3;
+            max_thickness = 6;
+
+            length_of_step = 4;
+            step_min = 1000;
+            step_max = 1500;
+        }
+
+        function thickness(args) {
+            min_thickness = args.min;
+            max_thickness = args.max;
+        }
+
+        function curveLength(args) {
+            step_min = args.min;
+            step_max = args.max;
+            length_of_step = args.length_per;
+        }
 
         // HOW CURVES RESPOND TO GRID ----------------------------------------------------------------------------
             // Specifies how a curve responds to the angles of the grid
-                var curve_types = ['#multi_curve_worker','#velocity_worker', '#turning_worker', '#spiral_worker']
-                var curve_type_index = 0;
+                var curve_types = ['#multi_curve_worker','#velocity_worker', '#turning_worker', '#slinky_worker']
+                const multi_curve_worker = 0
+                const velocity_worker = 1
+                const turning_worker = 2
+                const slinky_worker = 3
+                var curve_type_index = multi_curve_worker;
                 // For velocity and turning workers
                 var addition_values = [.05];
 
@@ -788,11 +588,9 @@
             // Will fill with colors in the color palette
                 var chosen_colors;
 
-
-            var background_color = null;
+            // Null will turn background color to the first color in the color palette. This may get set to black before that would happen
+                var background_color = null;
             
-
-
         // DEFINING GRID -----------------------------------------------------------------------------------------
             // Max and min X and Y values
                 var left_x;
@@ -808,15 +606,65 @@
                 var num_columns;
                 var num_rows;
                 var grid;
-
+            
+            // 
             var default_angle = 0;
 
             var getAngle;
             var a;
 
+        class Template {
+            constructor(angle_template = default_template, angle_modifiers, worker_type, drawSettings) {
+                getAngle = function(row, col, theta_offset) {
+                    var angle = angle_template[0](row, col, theta_offset, angle_template[1]);
+                    for (let i=0; i<angle_modifiers.length; i++) {
+                        angle = angle_modifiers[i][0](angle, row, col, theta_offset, angle_modifiers[i][1])
+                    }
+                    return (angle + theta_offset) % (2 * PI);
+                };
+                curve_type_index = worker_type;
+
+                if (drawSettings != null && drawSettings != 0) {
+                    for (let i=0; i<drawSettings.length; i++) {    
+                        drawSettings[i][0](drawSettings[i][1]);
+                    }
+                }
+            }
+        }
+
+        var drawings_made = 0;
+        var total_drawings = 1;
+        var save_and_restart = true;
+
+        var save_data = true;
+        var drawing_data = [];
+
         function setup() {
+            // Normal Perlin
+            new Template( [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [ ], multi_curve_worker, [[spacedSettings, {}], [thickness, {'min' : 3, 'max': 6}], [curveLength, {'min' : 100, 'max': 150, 'length_per' : 1}]] );
+            // new Template( [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [ [rounding, {"round_value" : PI/8}] ], multi_curve_worker, [[screenFillSettings, {}]] );
+            // new Template( [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [ [rounding, {"round_value" : PI/4}] ], multi_curve_worker, [[screenFillSettings, {}]] );
+            
+            // // Circles
+            // new Template( [circles, {}] , [ ], multi_curve_worker, [[perlinSettings, {}]] );
+
+            // // Squares
+            // new Template( [circles, {}] , [ [rounding, {"round_value" : PI/2}] ], multi_curve_worker, [[perlinSettings, {}]] );
+
+            // Octagons
+            // new Template( [circles, {}] , [ [rounding, {"round_value" : PI/4}] ], multi_curve_worker, [[perlinSettings, {}]] );
+
+            // // Spirals
+            // new Template( [circles, {}] , [ [pulling, {"h_pull_power" : 1, "v_pull_power" : .125}] ], multi_curve_worker, [[perlinSettings, {}]] );
+            
+            // // Cardioids and flowers
+            // new Template( [flowers, {'a' : 3}], [ ], multi_curve_worker, [[perlinSettings, {}]] )
+
+            // // Slinkies/Curls
+            // new Template( [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [], slinky_worker, [[slinkySettings, {"addition_values" : [PI/16, PI/8, 1, 3]}]] );
+            
+
             background_color = new Color(0,0,0);
-            template.runFunction([]);
             
             // P5.JS SETUP ---------------------------------------------------------
             createCanvas(800, 800);
@@ -835,7 +683,6 @@
 
             workers_complete = 0;
             noiseSeed(Math.floor(lerp(0,100000, random())));
-
 
             // DEFINING SCREEN BOUNDARIES ------------------------------------------
             left_x = Math.floor(width * -(decimal_overhang));
@@ -876,7 +723,7 @@
             a = Math.floor(lerp(1, 15, random()));
             for (let row = 0; row < num_rows; row++) {
                 for (let col = 0; col < num_columns; col++) {
-                    grid[row][col] = Template.getAngle(row, col, a, theta_offset);
+                    grid[row][col] = getAngle(row, col, a, theta_offset);
                 }
             }
         }
@@ -918,6 +765,8 @@
                 w.postMessage( { "args": [x_list, y_list, grid, left_x, top_y, resolution, step_length_list, num_steps_list, num_columns, num_rows, curves_made - curves_for_this_worker, backwards_traversal, random(), addition_values] } );
             }
         }
+
+        
 
         // HSL color storage
         class Color {
