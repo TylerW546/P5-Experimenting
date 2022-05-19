@@ -587,10 +587,10 @@
             [thickness, {'min' : 3, 'max': 6}], [thickness, {'min' : 3, 'max': 6}], [thickness, {'min' : 3, 'max': 6}], [thickness, {'min' : 3, 'max': 6}],
             [thickness, {'min' : 2, 'max': 6}]]
 
-            thick = thickness[Math.floor(random()*thicknesses.length)]
+            thick = thicknesses[Math.floor(random()*thicknesses.length)]
 
-            min_thickness = thick.min;
-            max_thickness = thick.max;
+            min_thickness = thick[1].min;
+            max_thickness = thick[1].max;
         }
 
         function deathChecks(args) {
@@ -782,8 +782,8 @@
             new Template("Short Spaced Perlin", 5, [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [ ], multi_curve_worker, [[spacedSettings, {}], [curveLength, {'min' : 50, 'max': 75, 'length_per' : 1}]] );
 
             // Dicrhromes
-            new Template("Spaced Perlin", 5, [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [ ], multi_curve_worker, [[spacedSettings, {}], [curveLength, {'min' : 100, 'max': 150, 'length_per' : 1}], [deathChecks, {'collision' : true, 'same_color' : false}], [randomColors, {"num_colors" : 2}], [numCurves, {'num' : 500}], thick] );
-            new Template("Partially-Spaced Perlin", 5, [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [ ], multi_curve_worker, [[spacedSettings, {}], [curveLength, {'min' : 100, 'max': 150, 'length_per' : 1}], [deathChecks, {'collision' : true, 'same_color' : true}], [randomColors, {"num_colors" : 2}], [numCurves, {'num' : 500}], thick] );
+            new Template("Spaced Perlin", 5, [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [ ], multi_curve_worker, [[spacedSettings, {}], [curveLength, {'min' : 100, 'max': 150, 'length_per' : 1}], [deathChecks, {'collision' : true, 'same_color' : false}], [randomColors, {"num_colors" : 2}], [numCurves, {'num' : 500}]] );
+            new Template("Partially-Spaced Perlin", 5, [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [ ], multi_curve_worker, [[spacedSettings, {}], [curveLength, {'min' : 100, 'max': 150, 'length_per' : 1}], [deathChecks, {'collision' : true, 'same_color' : true}], [randomColors, {"num_colors" : 2}], [numCurves, {'num' : 500}]] );
             
             new Template("Rounded Perlin", 3, [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [ [rounding, {"round_value" : PI/8}] ], multi_curve_worker, [[screenFillSettings, {}]] );
             new Template("Spaced Rounded Perlin", 6, [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [ [rounding, {"round_value" : PI/8}] ], multi_curve_worker, [[spacedSettings, {}]] );
@@ -831,8 +831,8 @@
             new Template("Filled Carioids", 1, [flowers, {'a' : 3}], [ ], multi_curve_worker, [[screenFillSettings, {}]] )
             new Template("Semi-Filled Carioids", 2, [flowers, {'a' : 3}], [ ], multi_curve_worker, [[screenFillSettings, {}], [numCurves, {'num':500}]] )
             for (let i=4; i<9; i++) {    
-                new Template('Short Filled ' + (i-2).toString() + "-Petal Roses", 1, [flowers, {'a' : i}], [ ], multi_curve_worker, [[screenFillSettings, {}], [curveLength, {'min' : 30, 'max': 30, 'length_per' : 1}], [numCurves, {'num':4000}], [backTraverse, {}], [noInstantDeath, {}], [centerDestruction, {'distance' : 20}], thick ] )
-                new Template('Spaced ' + (i-2).toString() + "-Petal Roses", 1, [flowers, {'a' : i}], [ ], multi_curve_worker, [[spacedSettings, {}], [curveLength, {'min' : 100, 'max': 150, 'length_per' : 1}], [numCurves, {'num':4000}], [backTraverse, {}], [noInstantDeath, {}], [centerDestruction, {'distance' : 10}], thick ] )
+                new Template('Short Filled ' + (i-2).toString() + "-Petal Roses", 1, [flowers, {'a' : i}], [ ], multi_curve_worker, [[screenFillSettings, {}], [curveLength, {'min' : 30, 'max': 30, 'length_per' : 1}], [numCurves, {'num':4000}], [backTraverse, {}], [noInstantDeath, {}], [centerDestruction, {'distance' : 20}] ] )
+                new Template('Spaced ' + (i-2).toString() + "-Petal Roses", 1, [flowers, {'a' : i}], [ ], multi_curve_worker, [[spacedSettings, {}], [curveLength, {'min' : 100, 'max': 150, 'length_per' : 1}], [numCurves, {'num':4000}], [backTraverse, {}], [noInstantDeath, {}], [centerDestruction, {'distance' : 10}] ] )
             }
 
             // Slinkies/Curls
@@ -861,7 +861,7 @@
                 [2, randomColors, {"num_colors" : Math.floor(random() * 5 + 1)}],
                 [2, monochromatic, {"num_colors" : Math.floor(random() * 5 + 1)}],
                 [5, mainColorToBackground, {}],
-                [100, [chooseThickness, {}]]
+                [100, chooseThickness, {}]
             ]
 
             for (let i = 0; i < random_added_draw_settings.length; i++) {
