@@ -576,21 +576,21 @@
             }
         }
 
-        function mainColorToBackground(args) {
+        function mainComplimentToBackground(args) {
             if (chosen_colors.length > 1) {    
                 background_color = new Color(chosen_colors[0].hue + 180, chosen_colors[0].saturation, chosen_colors[0].lightness);
             }
         }
 
         function chooseThickness(args) {
-            thicknesses = [[thickness, {'min' : 2, 'max': 4}], [thickness, {'min' : 2, 'max': 4}], [thickness, {'min' : 2, 'max': 4}], [thickness, {'min' : 2, 'max': 4}], [thickness, {'min' : 2, 'max': 4}], [thickness, {'min' : 2, 'max': 4}], [thickness, {'min' : 2, 'max': 4}],
-            [thickness, {'min' : 3, 'max': 6}], [thickness, {'min' : 3, 'max': 6}], [thickness, {'min' : 3, 'max': 6}], [thickness, {'min' : 3, 'max': 6}],
-            [thickness, {'min' : 2, 'max': 6}]]
+            thicknesses = [{'min' : 2, 'max': 4}, {'min' : 2, 'max': 4}, {'min' : 2, 'max': 4}, {'min' : 2, 'max': 4}, {'min' : 2, 'max': 4}, {'min' : 2, 'max': 4}, {'min' : 2, 'max': 4},
+            {'min' : 3, 'max': 6}, {'min' : 3, 'max': 6}, {'min' : 3, 'max': 6}, {'min' : 3, 'max': 6},
+            {'min' : 2, 'max': 6}]
 
             thick = thicknesses[Math.floor(random()*thicknesses.length)]
 
-            min_thickness = thick[1].min;
-            max_thickness = thick[1].max;
+            min_thickness = thick.min;
+            max_thickness = thick.max;
         }
 
         function deathChecks(args) {
@@ -601,7 +601,7 @@
         }
 
         function backTraverse(args) {
-            backwards_traversal = true;
+            backwards_traversal = args.on;
         }
 
         function noInstantDeath(args) {
@@ -777,72 +777,79 @@
             [thickness, {'min' : 3, 'max': 6}], [thickness, {'min' : 3, 'max': 6}], [thickness, {'min' : 3, 'max': 6}], [thickness, {'min' : 3, 'max': 6}],
             [thickness, {'min' : 2, 'max': 6}]]
 
-            // Normal Perlin
-            new Template("Spaced Perlin", 15, [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [ ], multi_curve_worker, [[spacedSettings, {}], [curveLength, {'min' : 100, 'max': 150, 'length_per' : 1}]] );
-            new Template("Short Spaced Perlin", 5, [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [ ], multi_curve_worker, [[spacedSettings, {}], [curveLength, {'min' : 50, 'max': 75, 'length_per' : 1}]] );
+            // // Normal Perlin
+            // new Template("Spaced Perlin", 15, [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [ ], multi_curve_worker, [[spacedSettings, {}], [curveLength, {'min' : 100, 'max': 150, 'length_per' : 1}]] );
+            // new Template("Short Spaced Perlin", 5, [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [ ], multi_curve_worker, [[spacedSettings, {}], [curveLength, {'min' : 50, 'max': 75, 'length_per' : 1}]] );
 
-            // Dicrhromes
-            new Template("Spaced Perlin", 5, [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [ ], multi_curve_worker, [[spacedSettings, {}], [curveLength, {'min' : 100, 'max': 150, 'length_per' : 1}], [deathChecks, {'collision' : true, 'same_color' : false}], [randomColors, {"num_colors" : 2}], [numCurves, {'num' : 500}]] );
-            new Template("Partially-Spaced Perlin", 5, [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [ ], multi_curve_worker, [[spacedSettings, {}], [curveLength, {'min' : 100, 'max': 150, 'length_per' : 1}], [deathChecks, {'collision' : true, 'same_color' : true}], [randomColors, {"num_colors" : 2}], [numCurves, {'num' : 500}]] );
+            // // Dicrhromes
+            // new Template("Spaced Perlin", 5, [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [ ], multi_curve_worker, [[spacedSettings, {}], [curveLength, {'min' : 100, 'max': 150, 'length_per' : 1}], [deathChecks, {'collision' : true, 'same_color' : false}], [randomColors, {"num_colors" : 2}], [numCurves, {'num' : 500}]] );
+            // new Template("Partially-Spaced Perlin", 5, [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [ ], multi_curve_worker, [[spacedSettings, {}], [curveLength, {'min' : 100, 'max': 150, 'length_per' : 1}], [deathChecks, {'collision' : true, 'same_color' : true}], [randomColors, {"num_colors" : 2}], [numCurves, {'num' : 500}]] );
             
-            new Template("Rounded Perlin", 3, [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [ [rounding, {"round_value" : PI/8}] ], multi_curve_worker, [[screenFillSettings, {}]] );
-            new Template("Spaced Rounded Perlin", 6, [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [ [rounding, {"round_value" : PI/8}] ], multi_curve_worker, [[spacedSettings, {}]] );
-            new Template("Rounded Perlin", 3, [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [ [rounding, {"round_value" : PI/4}] ], multi_curve_worker, [[screenFillSettings, {}]] );
-            new Template("Spaced Rounded Perlin", 6, [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [ [rounding, {"round_value" : PI/4}] ], multi_curve_worker, [[spacedSettings, {}]] );
+            // new Template("Rounded Perlin", 3, [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [ [rounding, {"round_value" : PI/8}] ], multi_curve_worker, [[screenFillSettings, {}]] );
+            // new Template("Spaced Rounded Perlin", 6, [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [ [rounding, {"round_value" : PI/8}] ], multi_curve_worker, [[spacedSettings, {}]] );
+            // new Template("Rounded Perlin", 3, [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [ [rounding, {"round_value" : PI/4}] ], multi_curve_worker, [[screenFillSettings, {}]] );
+            // new Template("Spaced Rounded Perlin", 6, [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [ [rounding, {"round_value" : PI/4}] ], multi_curve_worker, [[spacedSettings, {}]] );
             
-            new Template("Short Filled Perlin", 2, [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [ ], multi_curve_worker, [[screenFillSettings, {}], [curveLength, {'min' : 100, 'max': 150, 'length_per' : 1}]] );
-            new Template("Short Semi-Filled Perlin", 2, [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [ ], multi_curve_worker, [[screenFillSettings, {}], [curveLength, {'min' : 100, 'max': 150, 'length_per' : 1}], [numCurves, {'num':1000}]] );
-            new Template("Long Filled Perlin", 5, [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [ ], multi_curve_worker, [[screenFillSettings, {}], [curveLength, {'min' : 500, 'max': 750, 'length_per' : 1}]] );
-            new Template("Long Semi-Filled Perlin", 2, [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [ ], multi_curve_worker, [[screenFillSettings, {}], [curveLength, {'min' : 500, 'max': 750, 'length_per' : 1}], [numCurves, {'num':250}]] );
+            // new Template("Short Filled Perlin", 2, [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [ ], multi_curve_worker, [[screenFillSettings, {}], [curveLength, {'min' : 100, 'max': 150, 'length_per' : 1}]] );
+            // new Template("Short Semi-Filled Perlin", 2, [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [ ], multi_curve_worker, [[screenFillSettings, {}], [curveLength, {'min' : 100, 'max': 150, 'length_per' : 1}], [numCurves, {'num':1000}]] );
+            // new Template("Long Filled Perlin", 5, [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [ ], multi_curve_worker, [[screenFillSettings, {}], [curveLength, {'min' : 500, 'max': 750, 'length_per' : 1}]] );
+            // new Template("Long Semi-Filled Perlin", 2, [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [ ], multi_curve_worker, [[screenFillSettings, {}], [curveLength, {'min' : 500, 'max': 750, 'length_per' : 1}], [numCurves, {'num':250}]] );
             
-            new Template("Filled Stretched Perlin", 2, [perlin, {"row_scaling" : .025, "col_scaling" : .005}] , [ ], multi_curve_worker, [[screenFillSettings, {}], [curveLength, {'min' : 500, 'max': 750, 'length_per' : 1}]] );
-            new Template("Filled Stretched Perlin", 2, [perlin, {"row_scaling" : .005, "col_scaling" : .025}] , [ ], multi_curve_worker, [[screenFillSettings, {}], [curveLength, {'min' : 500, 'max': 750, 'length_per' : 1}]] );
+            // new Template("Filled Stretched Perlin", 2, [perlin, {"row_scaling" : .025, "col_scaling" : .005}] , [ ], multi_curve_worker, [[screenFillSettings, {}], [curveLength, {'min' : 500, 'max': 750, 'length_per' : 1}]] );
+            // new Template("Filled Stretched Perlin", 2, [perlin, {"row_scaling" : .005, "col_scaling" : .025}] , [ ], multi_curve_worker, [[screenFillSettings, {}], [curveLength, {'min' : 500, 'max': 750, 'length_per' : 1}]] );
             
-            new Template("Semi-Filled Stretched Perlin", 2, [perlin, {"row_scaling" : .025, "col_scaling" : .005}] , [ ], multi_curve_worker, [[screenFillSettings, {}], [curveLength, {'min' : 500, 'max': 750, 'length_per' : 1}], [numCurves, {'num':400}]] );
-            new Template("Semi-Filled Stretched Perlin", 2, [perlin, {"row_scaling" : .005, "col_scaling" : .025}] , [ ], multi_curve_worker, [[screenFillSettings, {}], [curveLength, {'min' : 500, 'max': 750, 'length_per' : 1}], [numCurves, {'num':400}]] );
+            // new Template("Semi-Filled Stretched Perlin", 2, [perlin, {"row_scaling" : .025, "col_scaling" : .005}] , [ ], multi_curve_worker, [[screenFillSettings, {}], [curveLength, {'min' : 500, 'max': 750, 'length_per' : 1}], [numCurves, {'num':400}]] );
+            // new Template("Semi-Filled Stretched Perlin", 2, [perlin, {"row_scaling" : .005, "col_scaling" : .025}] , [ ], multi_curve_worker, [[screenFillSettings, {}], [curveLength, {'min' : 500, 'max': 750, 'length_per' : 1}], [numCurves, {'num':400}]] );
 
-            new Template("Spaced Stretched Perlin", 6, [perlin, {"row_scaling" : .025, "col_scaling" : .005}] , [ ], multi_curve_worker, [[spacedSettings, {}], [curveLength, {'min' : 100, 'max': 150, 'length_per' : 1}]] );
-            new Template("Spaced Stretched Perlin", 6, [perlin, {"row_scaling" : .005, "col_scaling" : .025}] , [ ], multi_curve_worker, [[spacedSettings, {}], [curveLength, {'min' : 100, 'max': 150, 'length_per' : 1}]] );
+            // new Template("Spaced Stretched Perlin", 6, [perlin, {"row_scaling" : .025, "col_scaling" : .005}] , [ ], multi_curve_worker, [[spacedSettings, {}], [curveLength, {'min' : 100, 'max': 150, 'length_per' : 1}]] );
+            // new Template("Spaced Stretched Perlin", 6, [perlin, {"row_scaling" : .005, "col_scaling" : .025}] , [ ], multi_curve_worker, [[spacedSettings, {}], [curveLength, {'min' : 100, 'max': 150, 'length_per' : 1}]] );
             
-            new Template("Filled Circular Perlin", 3, [thetaPerlin, {"theta_multiplier" : .005, "r_multiplier" : .025}] , [ ], multi_curve_worker, [[screenFillSettings, {}], [curveLength, {'min' : 200, 'max': 300, 'length_per' : 1}]] );
-            new Template("Spaced Circular Perlin", 6, [thetaPerlin, {"theta_multiplier" : .005, "r_multiplier" : .025}] , [ ], multi_curve_worker, [[spacedSettings, {}], [curveLength, {'min' : 100, 'max': 150, 'length_per' : 1}]] );
-            new Template("Filled Radius Perlin", 3, [rModifiedPerlin, {"row_scaling" : .005, "col_scaling" : .005}] , [ ], multi_curve_worker, [[screenFillSettings, {}], [curveLength, {'min' : 200, 'max': 300, 'length_per' : 1}]] );
-            new Template("Semi-Filled Radius Perlin", 6, [rModifiedPerlin, {"row_scaling" : .005, "col_scaling" : .005}] , [ ], multi_curve_worker, [[screenFillSettings, {}], [curveLength, {'min' : 500, 'max': 750, 'length_per' : 1}], [numCurves, {'num':800}]] );
+            // new Template("Filled Circular Perlin", 3, [thetaPerlin, {"theta_multiplier" : .005, "r_multiplier" : .025}] , [ ], multi_curve_worker, [[screenFillSettings, {}], [curveLength, {'min' : 200, 'max': 300, 'length_per' : 1}]] );
+            // new Template("Spaced Circular Perlin", 6, [thetaPerlin, {"theta_multiplier" : .005, "r_multiplier" : .025}] , [ ], multi_curve_worker, [[spacedSettings, {}], [curveLength, {'min' : 100, 'max': 150, 'length_per' : 1}]] );
+            // new Template("Filled Radius Perlin", 3, [rModifiedPerlin, {"row_scaling" : .005, "col_scaling" : .005}] , [ ], multi_curve_worker, [[screenFillSettings, {}], [curveLength, {'min' : 200, 'max': 300, 'length_per' : 1}]] );
+            // new Template("Semi-Filled Radius Perlin", 6, [rModifiedPerlin, {"row_scaling" : .005, "col_scaling" : .005}] , [ ], multi_curve_worker, [[screenFillSettings, {}], [curveLength, {'min' : 500, 'max': 750, 'length_per' : 1}], [numCurves, {'num':800}]] );
             
-            // Good
-            new Template("Spaced Radius Perlin", 5, [rModifiedPerlin, {"row_scaling" : .005, "col_scaling" : .005}] , [ ], multi_curve_worker, [[spacedSettings, {}], [curveLength, {'min' : 100, 'max': 150, 'length_per' : 1}]] );
+            // // Good
+            // new Template("Spaced Radius Perlin", 5, [rModifiedPerlin, {"row_scaling" : .005, "col_scaling" : .005}] , [ ], multi_curve_worker, [[spacedSettings, {}], [curveLength, {'min' : 100, 'max': 150, 'length_per' : 1}]] );
             
-            // Circles
-            new Template("Spaced Circles", 1, [circles, {}] , [ ], multi_curve_worker, [[screenFillSettings, {}], [selfDestruction, {}],  [stepLength, {'length_per' : .25}], [numCurves, {'num':250}]] );
-            new Template("Filled Circles", 1, [circles, {}] , [ ], multi_curve_worker, [[spacedSettings, {}], [selfDestruction, {}], [centerDestruction, {'distance' : 20}] ] );
+            // // Circles
+            // new Template("Spaced Circles", 1, [circles, {}] , [ ], multi_curve_worker, [[screenFillSettings, {}], [selfDestruction, {}],  [stepLength, {'length_per' : .25}], [numCurves, {'num':250}]] );
+            // new Template("Filled Circles", 1, [circles, {}] , [ ], multi_curve_worker, [[spacedSettings, {}], [selfDestruction, {}], [centerDestruction, {'distance' : 20}] ] );
 
-            // Squares
-            new Template("Filled Squares", 1, [circles, {}] , [ [rounding, {"round_value" : PI/2}] ], multi_curve_worker, [[screenFillSettings, {}], [selfDestruction, {}]] );
+            // // Squares
+            // new Template("Filled Squares", 1, [circles, {}] , [ [rounding, {"round_value" : PI/2}] ], multi_curve_worker, [[screenFillSettings, {}], [selfDestruction, {}]] );
 
-            // Octagons
-            new Template("Filled Octagons", 1, [circles, {}] , [ [rounding, {"round_value" : PI/4}] ], multi_curve_worker, [[screenFillSettings, {}], [numCurves, {'num':1000}]] );
+            // // Octagons
+            // new Template("Filled Octagons", 1, [circles, {}] , [ [rounding, {"round_value" : PI/4}] ], multi_curve_worker, [[screenFillSettings, {}], [numCurves, {'num':1000}]] );
 
-            // Spirals
-            new Template("Filled Skewed Spirals", 2, [circles, {}] , [ [pulling, {"h_pull_power" : 1, "v_pull_power" : .125}] ], multi_curve_worker, [[screenFillSettings, {}]] );
-            new Template("Semi-Filled Skewed Spirals", 2, [circles, {}] , [ [pulling, {"h_pull_power" : 1, "v_pull_power" : .125}] ], multi_curve_worker, [[screenFillSettings, {}], [numCurves, {'num':1000}] ] );
-            new Template("Spaced Skewed Spirals", 4, [circles, {}] , [ [pulling, {"h_pull_power" : 1, "v_pull_power" : .125}] ], multi_curve_worker, [[spacedSettings, {}]] );
+            // // Spirals
+            // new Template("Filled Skewed Spirals", 2, [circles, {}] , [ [pulling, {"h_pull_power" : 1, "v_pull_power" : .125}] ], multi_curve_worker, [[screenFillSettings, {}]] );
+            // new Template("Semi-Filled Skewed Spirals", 2, [circles, {}] , [ [pulling, {"h_pull_power" : 1, "v_pull_power" : .125}] ], multi_curve_worker, [[screenFillSettings, {}], [numCurves, {'num':1000}] ] );
+            // new Template("Spaced Skewed Spirals", 4, [circles, {}] , [ [pulling, {"h_pull_power" : 1, "v_pull_power" : .125}] ], multi_curve_worker, [[spacedSettings, {}]] );
             
-            // Cardioids and flowers
-            new Template("Filled Carioids", 1, [flowers, {'a' : 3}], [ ], multi_curve_worker, [[screenFillSettings, {}]] )
-            new Template("Semi-Filled Carioids", 2, [flowers, {'a' : 3}], [ ], multi_curve_worker, [[screenFillSettings, {}], [numCurves, {'num':500}]] )
-            for (let i=4; i<9; i++) {    
-                new Template('Short Filled ' + (i-2).toString() + "-Petal Roses", 1, [flowers, {'a' : i}], [ ], multi_curve_worker, [[screenFillSettings, {}], [curveLength, {'min' : 30, 'max': 30, 'length_per' : 1}], [numCurves, {'num':4000}], [backTraverse, {}], [noInstantDeath, {}], [centerDestruction, {'distance' : 20}] ] )
-                new Template('Spaced ' + (i-2).toString() + "-Petal Roses", 1, [flowers, {'a' : i}], [ ], multi_curve_worker, [[spacedSettings, {}], [curveLength, {'min' : 100, 'max': 150, 'length_per' : 1}], [numCurves, {'num':4000}], [backTraverse, {}], [noInstantDeath, {}], [centerDestruction, {'distance' : 10}] ] )
-            }
+            // // Cardioids and flowers
+            // new Template("Filled Carioids", 1, [flowers, {'a' : 3}], [ ], multi_curve_worker, [[screenFillSettings, {}]] )
+            // new Template("Semi-Filled Carioids", 2, [flowers, {'a' : 3}], [ ], multi_curve_worker, [[screenFillSettings, {}], [numCurves, {'num':500}]] )
+            // for (let i=4; i<9; i++) {    
+            //     new Template('Short Filled ' + (i-2).toString() + "-Petal Roses", 1, [flowers, {'a' : i}], [ ], multi_curve_worker, [[screenFillSettings, {}], [curveLength, {'min' : 30, 'max': 30, 'length_per' : 1}], [numCurves, {'num':4000}],  [backTraverse, 'on' : true{}], [noInstantDeath, {}], [centerDestruction, {'distance' : 20}] ] )
+            //     new Template('Spaced ' + (i-2).toString() + "-Petal Roses", 1, [flowers, {'a' : i}], [ ], multi_curve_worker, [[spacedSettings, {}], [curveLength, {'min' : 100, 'max': 150, 'length_per' : 1}], [numCurves, {'num':4000}],  [backTraverse, 'on' : true{}], [noInstantDeath, {}], [centerDestruction, {'distance' : 10}] ] )
+            // }
 
-            // Slinkies/Curls
-            new Template("Filled Large Perlin Squiggles", 3, [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [], slinky_worker, [[slinkySettings, {"addition_values" : [PI/16, PI/8, 1, 3]}], [numCurves, {'num':1000}], thicknesses[1], [noInstantDeath, {}] ] );
-            new Template("Semi-Filled Large Perlin Squiggles", 3, [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [], slinky_worker, [[slinkySettings, {"addition_values" : [PI/16, PI/8, 1, 3]}], [numCurves, {'num':250}], [noInstantDeath, {}]] );
-            new Template("Spaced Large Perlin Squiggles", 3, [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [], slinky_worker, [[slinkySettings, {"addition_values" : [PI/16, PI/8, 1, 3]}], [numCurves, {'num':4000}], [deathChecks, {'collision' : true}], thicknesses[1], [noInstantDeath, {}] ] );
-            new Template("Filled Small Perlin Squiggles", 3, [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [], slinky_worker, [[slinkySettings, {"addition_values" : [PI/4, PI/2, 3, 5]}], [numCurves, {'num':500}], thicknesses[1], [noInstantDeath, {}]] );
-            new Template("Semi-Filled Small Perlin Squiggles", 3, [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [], slinky_worker, [[slinkySettings, {"addition_values" : [PI/4, PI/2, 3, 5]}], [numCurves, {'num':125}], thicknesses[1], [noInstantDeath, {}]] );
-            new Template("Spaced Small Perlin Squiggles", 3, [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [], slinky_worker, [[slinkySettings, {"addition_values" : [PI/4, PI/2, 3, 5]}], [numCurves, {'num':4000}], [deathChecks, {'collision' : true}], thicknesses[1], [noInstantDeath, {}]] );
-            new Template("Spaced Large Perlin Slinkies", 3, [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [], slinky_worker, [[slinkySettings, {"addition_values" : [PI/32, PI/16, .2, .4]}], [thickness, {'min' : 2, 'max': 4}], [numCurves, {'num':4000}], [deathChecks, {'collision' : true}], thicknesses[1], [noInstantDeath, {}]] );
+            // // Slinkies/Curls
+            // new Template("Filled Large Perlin Squiggles", 3, [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [], slinky_worker, [[slinkySettings, {"addition_values" : [PI/16, PI/8, 1, 3]}], [numCurves, {'num':1000}], thicknesses[1], [noInstantDeath, {}] ] );
+            // new Template("Semi-Filled Large Perlin Squiggles", 3, [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [], slinky_worker, [[slinkySettings, {"addition_values" : [PI/16, PI/8, 1, 3]}], [numCurves, {'num':250}], [noInstantDeath, {}]] );
+            // new Template("Spaced Large Perlin Squiggles", 3, [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [], slinky_worker, [[slinkySettings, {"addition_values" : [PI/16, PI/8, 1, 3]}], [numCurves, {'num':4000}], [deathChecks, {'collision' : true}], thicknesses[1], [noInstantDeath, {}] ] );
+            // new Template("Filled Small Perlin Squiggles", 3, [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [], slinky_worker, [[slinkySettings, {"addition_values" : [PI/4, PI/2, 3, 5]}], [numCurves, {'num':500}], thicknesses[1], [noInstantDeath, {}]] );
+            // new Template("Semi-Filled Small Perlin Squiggles", 3, [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [], slinky_worker, [[slinkySettings, {"addition_values" : [PI/4, PI/2, 3, 5]}], [numCurves, {'num':125}], thicknesses[1], [noInstantDeath, {}]] );
+            // new Template("Spaced Small Perlin Squiggles", 3, [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [], slinky_worker, [[slinkySettings, {"addition_values" : [PI/4, PI/2, 3, 5]}], [numCurves, {'num':4000}], [deathChecks, {'collision' : true}], thicknesses[1], [noInstantDeath, {}]] );
+            // new Template("Spaced Large Perlin Slinkies", 3, [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [], slinky_worker, [[slinkySettings, {"addition_values" : [PI/32, PI/16, .2, .4]}], [thickness, {'min' : 2, 'max': 4}], [numCurves, {'num':4000}], [deathChecks, {'collision' : true}], thicknesses[1], [noInstantDeath, {}]] );
+
+            // new Template("Velocities", 5,  [perlin, {"row_scaling" : .005, "col_scaling" : .005}], [], velocity_worker,  [[backTraverse, {'on' : false}]])
+            // new Template("U-Shaped Velocities", 5,  [perlin, {"row_scaling" : .005, "col_scaling" : .005}], [], velocity_worker, [])
+            // new Template("Circles vs. Squiggles", 15,  [perlin, {"row_scaling" : .005, "col_scaling" : .005}], [], turning_worker, [[backTraverse, {'on' : false}]])
+            // new Template("Circles vs. Squiggles", 5,  [rModifiedPerlin, {"row_scaling" : .005, "col_scaling" : .005}], [], turning_worker, [[backTraverse, {'on' : false}]])
+            // new Template("Quadrant Separated Circles vs. Squiggles", 2,  [circles, {}], [], turning_worker, [[backTraverse, {'on' : false}]])
+            new Template("Circular Circles vs. Squiggles", 15, [thetaPerlin, {"theta_multiplier" : .005, "r_multiplier" : .025}] , [], turning_worker, [[backTraverse, {'on' : false}]])
 
             background_color = new Color(0,0,0);
             
@@ -860,7 +867,7 @@
             random_added_draw_settings = [
                 [2, randomColors, {"num_colors" : Math.floor(random() * 5 + 1)}],
                 [2, monochromatic, {"num_colors" : Math.floor(random() * 5 + 1)}],
-                [5, mainColorToBackground, {}],
+                [9, mainComplimentToBackground, {}],
                 [100, chooseThickness, {}]
             ]
 
