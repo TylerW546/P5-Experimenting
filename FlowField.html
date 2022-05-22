@@ -590,10 +590,12 @@
             {'min' : 3, 'max': 6}, {'min' : 3, 'max': 6}, {'min' : 3, 'max': 6}, {'min' : 3, 'max': 6},
             {'min' : 2, 'max': 6}]
 
-            thick = thicknesses[Math.floor(random()*thicknesses.length)]
+            if (min_thickness == null) {
+                thick = thicknesses[Math.floor(random()*thicknesses.length)]
 
-            min_thickness = thick.min;
-            max_thickness = thick.max;
+                min_thickness = thick.min;
+                max_thickness = thick.max;
+            }
         }
 
         function semiFill(args) {
@@ -630,14 +632,14 @@
             min_thickness = null;
             max_thickness = null;
             stroke_spacing = 0;
-            total_workers = 100;
-            total_curves = 4000;
-            length_of_step = .5;
+            total_workers = 1;
+            total_curves = 3000;
+            length_of_step = 1;
             step_min = 250;
             step_max = 350;
             instant_death = true;
 
-            decimal_overhang = .05;
+            decimal_overhang = 0;
             res_mult = .003;
 
             background_color = new Color(0,0,0);
@@ -706,19 +708,19 @@
 
 
             // Number of total threads to calculate curves (lower this number if the page runs out of data)
-                var total_workers = 400;
+                var total_workers;
             // Number of total curves
-                var total_curves = 4000;
+                var total_curves;
             // Counts the number of completed cruves, drawn or not
                 var workers_complete;
             // Counts successfully drawn curves
                 var curves_drawn_success;
             
             // Length of each step
-                var length_of_step = 2;
+                var length_of_step;
             // Range for number of steps per curve
-                var step_min = 250;
-                var step_max = 350;
+                var step_min;
+                var step_max;
 
             // Will fill with colors in the color palette
                 var chosen_colors;
@@ -776,15 +778,19 @@
             }
         }
 
+        var last_file_made = 0;
+
         var drawings_made = 0;
-        var total_drawings = 1;
+        var total_drawings = 200;
         var save_and_restart = true;
 
         var save_data = true;
         var drawing_data = [];
+        if (last_file_made == 0) {
+            drawing_data = ["Official Name*Curve Name*Background Color*Number of Curves*Curve Type*Curve Width Range*Angle Type*Curve Color Type"];
+        }
 
         function setup() {
-
             thicknesses = [[thickness, {'min' : 2, 'max': 4}], [thickness, {'min' : 2, 'max': 4}], [thickness, {'min' : 2, 'max': 4}], [thickness, {'min' : 2, 'max': 4}], [thickness, {'min' : 2, 'max': 4}], [thickness, {'min' : 2, 'max': 4}], [thickness, {'min' : 2, 'max': 4}],
             [thickness, {'min' : 3, 'max': 6}], [thickness, {'min' : 3, 'max': 6}], [thickness, {'min' : 3, 'max': 6}], [thickness, {'min' : 3, 'max': 6}],
             [thickness, {'min' : 2, 'max': 6}]]
@@ -843,11 +849,11 @@
             }
 
             // Slinkies/Curls
-            new Template("Large Perlin Squiggles", 3, [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [], slinky_worker, [[slinkySettings, {"addition_values" : [PI/16, PI/8, 1, 3]}], [numCurves, {'num':1000}], thicknesses[1], [noInstantDeath, {}] ] );
-            new Template("Spaced Large Perlin Squiggles", 3, [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [], slinky_worker, [[slinkySettings, {"addition_values" : [PI/16, PI/8, 1, 3]}], [numCurves, {'num':4000}], [deathChecks, {'collision' : true}], thicknesses[1], [noInstantDeath, {}] ] );
-            new Template("Small Perlin Squiggles", 3, [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [], slinky_worker, [[slinkySettings, {"addition_values" : [PI/4, PI/2, 3, 5]}], [numCurves, {'num':500}], thicknesses[1], [noInstantDeath, {}]] );
-            new Template("Spaced Small Perlin Squiggles", 3, [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [], slinky_worker, [[slinkySettings, {"addition_values" : [PI/4, PI/2, 3, 5]}], [numCurves, {'num':4000}], [deathChecks, {'collision' : true}], thicknesses[1], [noInstantDeath, {}]] );
-            new Template("Spaced Large Perlin Slinkies", 3, [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [], slinky_worker, [[slinkySettings, {"addition_values" : [PI/32, PI/16, .2, .4]}], [thickness, {'min' : 2, 'max': 4}], [numCurves, {'num':4000}], [deathChecks, {'collision' : true}], thicknesses[1], [noInstantDeath, {}]] );
+            new Template("Large Perlin Squiggles", 6, [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [], slinky_worker, [[slinkySettings, {"addition_values" : [PI/16, PI/8, 1, 3]}], [numCurves, {'num' : 500}], thicknesses[1], [noInstantDeath, {}] ] );
+            new Template("Spaced Large Perlin Squiggles", 6, [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [], slinky_worker, [[slinkySettings, {"addition_values" : [PI/16, PI/8, 1, 3]}], [numCurves, {'num':4000}], [deathChecks, {'collision' : true}], thicknesses[1], [noInstantDeath, {}] ] );
+            new Template("Small Perlin Squiggles", 6, [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [], slinky_worker, [[slinkySettings, {"addition_values" : [PI/4, PI/2, 3, 5]}], [numCurves, {'num':500}], thicknesses[1], [noInstantDeath, {}]] );
+            new Template("Spaced Small Perlin Squiggles", 6, [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [], slinky_worker, [[slinkySettings, {"addition_values" : [PI/4, PI/2, 3, 5]}], [numCurves, {'num':4000}], [deathChecks, {'collision' : true}], thicknesses[1], [noInstantDeath, {}]] );
+            new Template("Spaced Large Perlin Slinkies", 10, [perlin, {"row_scaling" : .005, "col_scaling" : .005}] , [], slinky_worker, [[slinkySettings, {"addition_values" : [PI/32, PI/16, .2, .4]}], [thickness, {'min' : 2, 'max': 4}], [numCurves, {'num':4000}], [deathChecks, {'collision' : true}], thicknesses[1], [noInstantDeath, {}]] );
 
             // new Template("Velocities", 5,  [perlin, {"row_scaling" : .005, "col_scaling" : .005}], [], velocity_worker,  [[backTraverse, {'on' : false}]])
             // new Template("U-Shaped Velocities", 5,  [perlin, {"row_scaling" : .005, "col_scaling" : .005}], [], velocity_worker, [])
@@ -859,16 +865,12 @@
             background_color = new Color(0,0,0);
             
             // P5.JS SETUP ---------------------------------------------------------
-            createCanvas(2540, 1300);
+            createCanvas(800, 800);
             colorMode(HSL, 360);
             setupCustom();
         }
 
         function randomAdd() {
-            thick_chance = 100
-            if (min_thickness != null) {
-                thick_chance = 0
-            }
             random_added_draw_settings = [
                 [3, randomColors, {"num_colors" : Math.floor(random() * 5 + 1)}],
                 [3, monochromatic, {"num_colors" : Math.floor(random() * 5 + 1)}],
@@ -889,6 +891,7 @@
             chosen_colors = [];
             setChosenColors(3, 2, 2, 2, 3, 3);
 
+            template = null;
             template = Template.templates[Math.floor(lerp(0,Template.templates.length, random()))]
             template.setSettings();
 
@@ -964,7 +967,7 @@
                 y_list = [];
                 step_length_list = [];
                 num_steps_list = [];
-                for (let j = 0; j < curves_for_this_worker; j += 1) {
+                for (let j = 0; j < curves_for_this_worker; j++) {
                     [x,y] = randomCoordinates();
                     //[x, y] = getStartCoordinates(curves_made, total_curves);
                     //[x, y] = findWhiteSpace(1, 1000);
@@ -985,9 +988,9 @@
         // HSL color storage
         class Color {
             constructor(H, S, L) {
-                this.hue = Math.floor(H);
-                this.saturation = Math.floor(S);
-                this.lightness = Math.floor(L);
+                this.hue = Math.floor(H)%360;
+                this.saturation = Math.floor(S)%360;
+                this.lightness = Math.floor(L)%360;
             }
 
             get values() {
@@ -995,7 +998,7 @@
             }
 
             toString() {
-                return '(' + this.hue.toString() + ',' + this.saturation.toString() + ',' + this.lightness.toString() + ')'
+                return '[' + this.hue.toString() + ',' + this.saturation.toString() + ',' + this.lightness.toString() + ']'
             }
         }
 
@@ -1133,7 +1136,7 @@
                     stroke_width = Math.floor(lerp(min_thickness, max_thickness + 1, random()));
                     strokeWeight(stroke_width);
                     color = chosen_colors[floor(random() * chosen_colors.length)]
-                    stroke(color.hue, color.saturation, color.lightness);
+                    stroke(color.hue, color.saturation, color.lightness, 300);
 
                     last_point_x = -1000;
                     last_point_y = -1000;
@@ -1228,36 +1231,40 @@
                         }
                     }
                 }
-                // Kill worker when done drawing
-                w.terminate();
-
+                
                 workers_complete += 1
                 
-                if (workers_complete == min(total_workers, total_curves)-1) {
+                if (workers_complete == min(total_workers, total_curves)) {
                     new_image_string = '';
+                    
+                    new_image_string += "Ebb and Flow #" + (drawings_made+1+last_file_made) + "*";
 
-                    new_image_string += "Background Color: " + background_color.toString() + ',,';
-                    new_image_string += "Number of Curves: " + curves_drawn_success.toString() + ',,';
-                    new_image_string += "Curve Type: " + ["Reader", "Velocity", "Turning", "Spiral Reader"][curve_type_index] + ',,';
-                    new_image_string += "Curve Width Range: " + min_thickness.toString() + '-' + max_thickness.toString() + ',,';
-                    new_image_string += "Angle Type: " + template.name + ',,';
+                    new_image_string += "curve(" + (drawings_made+1+last_file_made) + ").jpg*";
+
+                    new_image_string += background_color.toString() + '*';
+                    new_image_string += curves_drawn_success.toString() + '*';
+                    new_image_string += ["Setter", "Velocity", "Turning", "Spiral Setter"][curve_type_index] + '*';
+                    new_image_string += min_thickness.toString() + '-' + max_thickness.toString() + '*';
+                    new_image_string += template.name + '*';
                     
                     var shaded = false;
                     for (let i=1; i<chosen_colors.length && !shaded; i++) {
                         if (chosen_colors[i].hue != chosen_colors[0].hue && chosen_colors[i].saturation != chosen_colors[0].saturation) {
-                            new_image_string += 'Monochromatic Shaded,,'
+                            new_image_string += 'Shaded Monochromatic*'
                             shaded = true;
                         }
                     }
                     if (!shaded) {
                         if (chosen_colors.length == 1) {
-                            new_image_string += 'Monochromatic,,'
+                            new_image_string += 'Monochromatic*'
                         }
                         else if (chosen_colors.length == 2) {
-                            new_image_string += 'Dichromatic,,'
+                            new_image_string += 'Dichromatic*'
                         }
                         else if (chosen_colors.length == 3) {
-                            new_image_string += 'Trichromatic,,'
+                            new_image_string += 'Trichromatic*'
+                        } else {
+                            new_image_string += 'Default*'
                         }
                     }
                     
