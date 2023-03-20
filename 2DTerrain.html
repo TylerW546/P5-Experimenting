@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Terrain Generator</title>
+</head>
+<body>
+	<script src = "p5.js"></script>
+	<script src = "sketch.js"></script>
+	<script type="text/javascript">
+		var HEIGHT = 1000;
+        var WIDTH = 1500;
+        
+        var terrainValues = [];
+
+
+        var layers = 10;
+        var widthPerLayer = 400; 
+
+		function setup(){
+			createCanvas(WIDTH, HEIGHT);
+			angleMode(DEGREES);
+			
+			for(var y = 0; y < layers; y++) {
+				noiseSeed();
+                terrainValues.push([]);
+				for(var x = 0; x < widthPerLayer; x++) {
+                    var xFraction = x/widthPerLayer*2000
+                    var noiseVal = 
+                        noise(xFraction * (1/300))  * 1 +
+                        noise(xFraction * (1/150))  * .5 +
+                        noise(xFraction * (1/75))   * .25 +
+                        noise(xFraction * (1/37.5)) * .125;
+                    //noiseVal /= 1.875;
+                    
+                    
+                    var max = y*(HEIGHT/2/layers);
+                    var min = y*(HEIGHT/2/layers)+300;
+                    terrainValues[y].push((1-noiseVal)*(max-min)+min);
+                }
+			}
+		}
+
+		function draw() {
+			background(0);
+			
+			noStroke();
+
+			//stroke(255);
+			//strokeWeight(0.5);
+		
+			//lights();
+			//directionalLight(128, 128, 128, 0, 0, -1);
+			
+			
+			//translate(-units*tileSize/2, 0, -units*tileSize/2);
+			//rotateX(90);
+			
+			for(var y = 0; y < layers; y++) {
+                console.log(y);
+                beginShape();
+                //shininess(15);
+                //specularMaterial(250);
+                fill(0,0,200*(y/layers)+55);
+
+                for(var x = 0; x < widthPerLayer; x++) {
+					vertex(x * width/widthPerLayer, terrainValues[y][x]);
+				}
+                vertex(width, height);
+                vertex(0, height);
+                endShape();
+			}
+			
+		}
+
+
+	</script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
