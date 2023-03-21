@@ -1,0 +1,1413 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Flow Field</title>
+</head>
+
+<body>
+    <script src="p5.js"></script>
+    <script src="sketch.js"></script>
+    <script id="velocity_worker" type="javascript/worker">
+        function abs(value) {
+            if (value >= 0) {
+                return value
+            } else {
+                return -1*value;
+            }
+        }
+
+        function angleFromXY(x, y) {
+            if (x == 0) {
+                if (y >= 0) {
+                    return PI / 2;
+                } else {
+                    return 3 * PI / 2;
+                }
+            }
+
+            theta = (Math.atan(y / x)) + 2 * PI;
+            if (x < 0) {
+                theta += PI;
+            }
+            return theta % (2*PI);
+        }
+
+        self.onmessage = function(e) {
+            [x_list, y_list, grid, left_x, top_y, resolution, step_length_list, num_steps_list, num_columns, num_rows, curves_made_before, backwards_traversal, random, addition_values] = e.data.args;
+            curves = [];
+
+            PI = 3.141593;
+
+            initial_velocity = random*2*PI;
+
+            for (var i=0; i<x_list.length; i++) {
+                x = x_list[i];
+                y = y_list[i];
+                velocity = initial_velocity;
+                
+                step_length = step_length_list[i];
+                num_steps = num_steps_list[i];
+                
+                grid_angle = null;
+
+                points = [];
+                for (let n=0; n<num_steps; n++) {
+                    x_offset = x - left_x;
+                    y_offset = y - top_y;
+                    column_index = Math.floor(x_offset / resolution);
+                    row_index = Math.floor(y_offset / resolution);
+                    points.push({'x' : x, 'y' : y});
+                    if (column_index>=0 && row_index>=0 && column_index<num_columns && row_index<num_rows && grid[row_index][column_index] != null) {
+                        if (grid_angle == null) {
+                            grid_angle = grid[row_index][column_index];
+                        }
+                        grid_angle = grid[row_index][column_index];
+
+                        velocity = angleFromXY(Math.cos(velocity)+addition_values[0]*Math.cos(grid_angle), Math.sin(velocity)+addition_values[0]*Math.sin(grid_angle))
+
+                        x_step = step_length * Math.cos(velocity);
+                        y_step = step_length * Math.sin(velocity);
+                        x += x_step;
+                        y += y_step;
+                    } else {
+                        break;
+                    }
+                }
+
+                if (backwards_traversal) {
+                    x = x_list[i];
+                    y = y_list[i];
+                    velocity = initial_velocity + PI;
+
+                    grid_angle = null;
+                    
+                    for (let n=0; n<num_steps; n++) {
+                        x_offset = x - left_x;
+                        y_offset = y - top_y;
+                        column_index = Math.floor(x_offset / resolution);
+                        row_index = Math.floor(y_offset / resolution);
+                        if (n>0) {
+                            points.unshift({'x' : x, 'y' : y});
+                        }
+                        if (column_index>=0 && row_index>=0 && column_index<num_columns && row_index<num_rows && grid[row_index][column_index] != null) {
+                            if (grid_angle == null) {
+                                grid_angle = ((grid[row_index][column_index] + PI)%(PI*2));
+                            }
+                            grid_angle = grid[row_index][column_index];
+
+                            velocity = angleFromXY(Math.cos(velocity)+addition_values[0]*Math.cos(grid_angle), Math.sin(velocity)+addition_values[0]*Math.sin(grid_angle))
+
+                            x_step = step_length * Math.cos(velocity);
+                            y_step = step_length * Math.sin(velocity);
+                            x += x_step;
+                            y += y_step;
+                        } else {
+                            break;
+                        }
+                    }
+                }
+                curves.push(points);
+            }
+            self.postMessage({"curves" : curves, "curves_made_before" : curves_made_before});
+        };
+    </script>
+    <script id="turning_worker" type="javascript/worker">
+        function abs(value) {
+            if (value >= 0) {
+                return value
+            } else {
+                return -1*value;
+            }
+        }
+
+        self.onmessage = function(e) {
+            [x_list, y_list, grid, left_x, top_y, resolution, step_length_list, num_steps_list, num_columns, num_rows, curves_made_before, backwards_traversal, random, addition_values] = e.data.args;
+            curves = [];
+
+            PI = 3.141593;
+
+            initial_angle = random*2*PI;
+
+            for (var i=0; i<x_list.length; i++) {
+                x = x_list[i];
+                y = y_list[i];
+                angle = initial_angle;
+                
+                step_length = step_length_list[i];
+                num_steps = num_steps_list[i];
+                
+                grid_angle = null;
+
+                points = [];
+                for (let n=0; n<num_steps; n++) {
+                    x_offset = x - left_x;
+                    y_offset = y - top_y;
+                    column_index = Math.floor(x_offset / resolution);
+                    row_index = Math.floor(y_offset / resolution);
+                    points.push({'x' : x, 'y' : y});
+                    if (column_index>=0 && row_index>=0 && column_index<num_columns && row_index<num_rows && grid[row_index][column_index] != null) {
+                        if (grid_angle == null) {
+                            grid_angle = grid[row_index][column_index];
+                        }
+                        grid_angle = grid[row_index][column_index];
+                        
+                        angle = (angle+addition_values[0]*grid_angle) % (2*PI);
+                        
+                        x_step = step_length * Math.cos(angle);
+                        y_step = step_length * Math.sin(angle);
+                        x += x_step;
+                        y += y_step;
+                    } else {
+                        break;
+                    }
+                }
+
+                if (backwards_traversal) {
+                    x = x_list[i];
+                    y = y_list[i];
+                    angle = initial_angle + PI;
+
+                    grid_angle = null;
+                    
+                    for (let n=0; n<num_steps; n++) {
+                        x_offset = x - left_x;
+                        y_offset = y - top_y;
+                        column_index = Math.floor(x_offset / resolution);
+                        row_index = Math.floor(y_offset / resolution);
+                        if (n>0) {
+                            points.unshift({'x' : x, 'y' : y});
+                        }
+                        if (column_index>=0 && row_index>=0 && column_index<num_columns && row_index<num_rows && grid[row_index][column_index] != null) {
+                            if (grid_angle == null) {
+                                grid_angle = ((grid[row_index][column_index] + PI)%(PI*2));
+                            }
+                            grid_angle = grid[row_index][column_index];
+                            
+                            angle = (angle+addition_values[0]*grid_angle) % (2*PI);
+
+                            x_step = step_length * Math.cos(angle);
+                            y_step = step_length * Math.sin(angle);
+                            x += x_step;
+                            y += y_step;
+                        } else {
+                            break;
+                        }
+                    }
+                }
+                curves.push(points);
+            }
+            self.postMessage({"curves" : curves, "curves_made_before" : curves_made_before});
+        };
+    </script>
+    <script id="slinky_worker" type="javascript/worker">
+        function abs(value) {
+            if (value >= 0) {
+                return value
+            } else {
+                return -1*value;
+            }
+        }
+
+        function angleFromXY(x, y) {
+            if (x == 0) {
+                if (y >= 0) {
+                    return PI / 2;
+                } else {
+                    return 3 * PI / 2;
+                }
+            }
+
+            var theta = (Math.atan(y / x)) + 2 * PI;
+            if (x < 0) {
+                theta += PI;
+            }
+            return theta % (2*PI);
+        }
+
+        self.onmessage = function(e) {
+            [x_list, y_list, grid, left_x, top_y, resolution, step_length_list, num_steps_list, num_columns, num_rows, curves_made_before, backwards_traversal, random, addition_values] = e.data.args;
+            curves = [];
+
+            PI = 3.141593;
+
+            initial_angle = random*2*PI;
+            
+            addition_per_step = addition_values[0]+(random*100)%1*(addition_values[1] - addition_values[0]);
+            grid_weight = addition_values[2]+(random*10000)%1*(addition_values[3] - addition_values[2]);
+
+            for (var i=0; i<x_list.length; i++) {
+                x = x_list[i];
+                y = y_list[i];
+                angle = initial_angle;
+
+                step_length = step_length_list[i];
+                num_steps = num_steps_list[i];
+                
+                grid_angle = null;
+
+                points = [];
+                for (let n=0; n<num_steps; n++) {
+                    x_offset = x - left_x;
+                    y_offset = y - top_y;
+                    column_index = Math.floor(x_offset / resolution);
+                    row_index = Math.floor(y_offset / resolution);
+                    points.push({'x' : x, 'y' : y});
+                    if (column_index>=0 && row_index>=0 && column_index<num_columns && row_index<num_rows && grid[row_index][column_index] != null) {
+                        if (grid_angle == null) {
+                            grid_angle = grid[row_index][column_index];
+                        }
+                        grid_angle = grid[row_index][column_index];
+                        
+                        angle = (angle+addition_per_step) % (2*PI);
+
+                        function_angle = angleFromXY(Math.cos(angle)+grid_weight*Math.cos(grid_angle), Math.sin(angle)+grid_weight*Math.sin(grid_angle))
+                        
+
+                        x_step = step_length * Math.cos(function_angle);
+                        y_step = step_length * Math.sin(function_angle);
+                        x += x_step;
+                        y += y_step;
+                    } else {
+                        break;
+                    }
+                }
+
+                if (backwards_traversal) {
+                    x = x_list[i];
+                    y = y_list[i];
+                    angle = initial_angle;
+
+                    grid_angle = null;
+                    
+                    for (let n=0; n<num_steps; n++) {
+                        x_offset = x - left_x;
+                        y_offset = y - top_y;
+                        column_index = Math.floor(x_offset / resolution);
+                        row_index = Math.floor(y_offset / resolution);
+                        if (n>0) {
+                            points.unshift({'x' : x, 'y' : y});
+                        }
+                        if (column_index>=0 && row_index>=0 && column_index<num_columns && row_index<num_rows && grid[row_index][column_index] != null) {
+                            if (grid_angle == null) {
+                                grid_angle = ((grid[row_index][column_index] + PI)%(PI*2));
+                            }
+                            grid_angle = grid[row_index][column_index];
+                            
+                            angle = (angle-addition_per_step) % (2*PI);
+
+                            function_angle = angleFromXY(Math.cos(angle)+grid_weight*Math.cos(grid_angle), Math.sin(angle)+grid_weight*Math.sin(grid_angle))
+
+
+                            x_step = step_length * Math.cos(function_angle + PI);
+                            y_step = step_length * Math.sin(function_angle + PI);
+                            x += x_step;
+                            y += y_step;
+                        } else {
+                            break;
+                        }
+                    }
+                }
+                curves.push(points);
+            }
+            self.postMessage({"curves" : curves, "curves_made_before" : curves_made_before});
+        };
+    </script>
+    <script id="multi_curve_worker" type="javascript/worker">
+        function abs(value) {
+            if (value >= 0) {
+                return value
+            } else {
+                return -1*value;
+            }
+        }
+
+        self.onmessage = function(e) {
+            [x_list, y_list, grid, left_x, top_y, resolution, step_length_list, num_steps_list, num_columns, num_rows, curves_made_before, backwards_traversal] = e.data.args;
+            curves = [];
+
+            PI = 3.141593;
+
+            for (var i=0; i<x_list.length; i++) {
+                x = x_list[i];
+                y = y_list[i];
+                step_length = step_length_list[i];
+                num_steps = num_steps_list[i];
+                
+                grid_angle = null;
+
+                points = [];
+                for (let n=0; n<num_steps; n++) {
+                    x_offset = x - left_x;
+                    y_offset = y - top_y;
+                    column_index = Math.floor(x_offset / resolution);
+                    row_index = Math.floor(y_offset / resolution);
+                    points.push({'x' : x, 'y' : y});
+                    if (column_index>=0 && row_index>=0 && column_index<num_columns && row_index<num_rows && grid[row_index][column_index] != null) {
+                        if (grid_angle == null) {
+                            grid_angle = grid[row_index][column_index];
+                        }
+                        else if (abs(grid_angle-grid[row_index][column_index]) > PI/2+.001 && abs(grid_angle-grid[row_index][column_index]) < 3*PI/2-.001) {
+                            grid_angle = (grid[row_index][column_index] + PI) % (PI*2);
+                        } else {
+                            grid_angle = grid[row_index][column_index];
+                        }
+                        x_step = step_length * Math.cos(grid_angle);
+                        y_step = step_length * Math.sin(grid_angle);
+                        x += x_step;
+                        y += y_step;
+                    } else {
+                        break;
+                    }
+                }
+
+                if (backwards_traversal) {
+                    x = x_list[i];
+                    y = y_list[i];
+
+                    grid_angle = null;
+                    
+                    for (let n=0; n<num_steps; n++) {
+                        x_offset = x - left_x;
+                        y_offset = y - top_y;
+                        column_index = Math.floor(x_offset / resolution);
+                        row_index = Math.floor(y_offset / resolution);
+                        if (n>0) {
+                            points.unshift({'x' : x, 'y' : y});
+                        }
+                        if (column_index>=0 && row_index>=0 && column_index<num_columns && row_index<num_rows && grid[row_index][column_index] != null) {
+                            if (grid_angle == null) {
+                                grid_angle = grid[row_index][column_index];
+                            }
+                            else if (abs(grid_angle-grid[row_index][column_index]) > PI/2+.001 && abs(grid_angle-grid[row_index][column_index]) < 3*PI/2-.001) {
+                                grid_angle = (grid[row_index][column_index] + PI) % (PI*2);
+                            } else {
+                                grid_angle = grid[row_index][column_index];
+                            }
+                            x_step = step_length * Math.cos(grid_angle + PI);
+                            y_step = step_length * Math.sin(grid_angle + PI);
+                            x += x_step;
+                            y += y_step;
+                        } else {
+                            break;
+                        }
+                    }
+                }
+                curves.push(points);
+            }
+            self.postMessage({"curves" : curves, "curves_made_before" : curves_made_before});
+        };
+    </script>
+    <script type="text/javascript">
+        // ANGLE TEMPLATES ----------------------------------------------------------------------------------------------------------------
+        function default_template(row, col, theta_offset, args) {
+            return (default_angle + theta_offset) % (2 * PI);
+        }
+
+        function perlin(row, col, theta_offset, args) {
+            // Processing's noise() works best when the step between
+            // points is approximately 0.005, so scale down to that
+            var scaled_x = col * args.col_scaling;
+            var scaled_y = row * args.row_scaling;
+            // translate the noise value to an angle (betwen 0 and 2 * PI)
+            // 3rd argument increases complexity as it gets smaller? Default to 1
+            var angle = map(noise(scaled_x, scaled_y), 0, 1, 0, 2 * PI);
+
+            return angle;
+        }
+
+        function thetaPerlin(row, col, theta_offset, args) {
+            // Polar Coordinates -------------------------
+            var x = (col - num_columns / 2);
+            var y = (row - num_rows / 2);
+            var theta = (angleFromXY(x, y) - theta_offset + 2 * PI) % (2 * PI);
+            var r = sqrt(Math.pow((row - num_rows / 2), 2) + Math.pow((col - num_columns / 2), 2));
+
+            // translate the noise value to an angle (betwen 0 and 2 * PI)
+            // 3rd argument increases complexity as it gets smaller? Default to 1
+            var angle = map(noise(theta * args.theta_multiplier, r * args.r_multiplier), 0, 1, 0, 2 * PI);
+
+            return angle;
+        }
+
+        function rModifiedPerlin(row, col, theta_offset, args) {
+            // Polar Coordinates -------------------------
+            var x = (col - num_columns / 2);
+            var y = (row - num_rows / 2);
+            var theta = (angleFromXY(x, y) - theta_offset + 2 * PI) % (2 * PI);
+            var r = sqrt(Math.pow((row - num_rows / 2), 2) + Math.pow((col - num_columns / 2), 2));
+
+            // Processing's noise() works best when the step between
+            // points is approximately 0.005, so scale down to that
+            var scaled_x = col * args.col_scaling;
+            var scaled_y = row * args.row_scaling;
+            // translate the noise value to an angle (betwen 0 and 2 * PI)
+            // 3rd argument increases complexity as it gets smaller? Default to 1
+            var angle = map(noise(x * r / 10000, y * r / 10000), 0, 1, 0, 2 * PI);
+
+            return angle;
+        }
+
+        function circles(row, col, theta_offset, args) {
+            // Polar Coordinates -------------------------
+            var x = (col - num_columns / 2);
+            var y = (row - num_rows / 2);
+            var theta = (angleFromXY(x, y) - theta_offset + 2 * PI) % (2 * PI);
+            var r = sqrt(Math.pow((row - num_rows / 2), 2) + Math.pow((col - num_columns / 2), 2));
+
+            var angle = theta + PI / 2;
+
+            return angle;
+        }
+
+        function flowers(row, col, theta_offset, args) {
+            // Polar Coordinates -------------------------
+            var x = (col - num_columns / 2);
+            var y = (row - num_rows / 2);
+            var theta = (angleFromXY(x, y) - theta_offset + 2 * PI) % (2 * PI);
+            var r = sqrt(Math.pow((row - num_rows / 2), 2) + Math.pow((col - num_columns / 2), 2));
+
+            // Flower, where a-2 is the number of petals
+            var angle = args.a / 2 * theta;
+
+            return angle;
+        }
+
+        // ANGLE MODIFIER -----------------------------------------------------------------------------------------------------------------
+        function rounding(angle, row, col, theta_offset, args) {
+            return roundAngleTo(angle, args.round_value);
+        }
+
+        function pulling(angle, row, col, theta_offset, args) {
+            var x = (col - num_columns / 2);
+            var y = (row - num_rows / 2);
+            var theta = (angleFromXY(x, y) - theta_offset + 2 * PI) % (2 * PI);
+
+            var vector_pull = [Math.cos(angle) - args.h_pull_power * Math.cos(theta), Math.sin(angle) - args.v_pull_power * Math.sin(theta)]
+
+            return angleFromXY(vector_pull[0], vector_pull[1]);
+        }
+
+        function screenFillSettings(args) {
+            collision_removal = false;
+
+            backwards_traversal = true;
+            self_collision_removal = false;
+            center_destruction = false;
+
+            length_of_step = .5;
+            step_min = 1000;
+            step_max = 1500;
+        }
+
+        function spacedSettings(args) {
+            collision_removal = true;
+            same_color_allowed = false;
+            if (random() < .8) {
+                stroke_spacing = 0;
+            } else {
+                stroke_spacing = Math.floor(random() * 3)
+            }
+
+            backwards_traversal = true;
+            self_collision_removal = false;
+            center_destruction = false;
+
+            length_of_step = .5;
+            step_min = 200;
+            step_max = 300;
+        }
+
+        function slinkySettings(args) {
+            // In this case, addition_values is a list of how fast
+            addition_values = args.addition_values; //[PI/16, PI/8, 2, 3];
+
+            backwards_traversal = true;
+            self_collision_removal = false;
+            center_destruction = false;
+
+            collision_removal = false;
+
+            length_of_step = 4;
+            step_min = 500;
+            step_max = 750;
+        }
+
+        function thickness(args) {
+            min_thickness = args.min;
+            max_thickness = args.max;
+        }
+
+        function curveLength(args) {
+            step_min = args.min;
+            step_max = args.max;
+            length_of_step = args.length_per;
+        }
+
+        function centerDestruction(args) {
+            center_destruction = true;
+            distance_to_center = args.distance;
+        }
+
+        function selfDestruction(args) {
+            self_collision_removal = true;
+        }
+
+        function numCurves(args) {
+            total_curves = args.num;
+        }
+
+        function stepLength(args) {
+            length_of_step = args.length_per;
+        }
+
+        function randomColors(args) {
+            chosen_colors = [];
+            for (let i = 0; i < args.num_colors; i++) {
+                chosen_colors.push(new RandomColor());
+            }
+        }
+
+        function monochromatic(args) {
+            chosen_colors = [];
+            color_set = new MonochromaticSet(12, 0, 360, new RandomColor())
+            for (let i = 0; i < args.num_colors; i++) {
+                chosen_colors.push(color_set.colors[Math.floor(random() * (color_set.colors.length - 4) + 2)]);
+            }
+            if (collision_removal == false) {
+                total_curves = 500
+            }
+        }
+
+        function mainComplimentToBackground(args) {
+            if (chosen_colors.length > 1) {
+                background_color = new Color(chosen_colors[0].hue + 180, chosen_colors[0].saturation, chosen_colors[0].lightness);
+            }
+        }
+
+        function chooseThickness(args) {
+            thicknesses = [{ 'min': 2, 'max': 4 }, { 'min': 2, 'max': 4 }, { 'min': 2, 'max': 4 }, { 'min': 2, 'max': 4 }, { 'min': 2, 'max': 4 }, { 'min': 2, 'max': 4 }, { 'min': 2, 'max': 4 },
+            { 'min': 3, 'max': 6 }, { 'min': 3, 'max': 6 }, { 'min': 3, 'max': 6 }, { 'min': 3, 'max': 6 },
+            { 'min': 2, 'max': 6 }]
+
+            if (min_thickness == null) {
+                thick = thicknesses[Math.floor(random() * thicknesses.length)]
+
+                min_thickness = thick.min;
+                max_thickness = thick.max;
+            }
+        }
+
+        function semiFill(args) {
+            possible_totals = [50, 125, 250, 300, 400]
+            if (total_curves >= 1000 && collision_removal == false && step_max > 200) {
+                total_curves = possible_totals[Math.floor(random() * possible_totals.length)]
+            }
+        }
+
+        function deathChecks(args) {
+            collision_removal = args.collision;
+            same_color_allowed = args.same_color;
+            self_collision_removal = args.self;
+            center_destruction = self.self;
+        }
+
+        function backTraverse(args) {
+            backwards_traversal = args.on;
+        }
+
+        function noInstantDeath(args) {
+            instantDeath = false;
+        }
+
+        function defaults() {
+            addition_values = [.05];
+            backwards_traversal = true;
+            collision_removal = true;
+            same_color_allowed = false;
+            self_collision_removal = false; // WIP
+            center_destruction = true;
+            distance_to_center = 5;
+            min_length = 20;
+            min_thickness = null;
+            max_thickness = null;
+            stroke_spacing = 0;
+            total_workers = 1;
+            total_curves = 3000;
+            length_of_step = 1;
+            step_min = 250;
+            step_max = 350;
+            instant_death = true;
+
+            decimal_overhang = 0;
+            res_mult = .003;
+
+            background_color = new Color(0, 0, 0);
+        }
+
+        // DEFINING GRID -----------------------------------------------------------------------------------------
+        // Max and min X and Y values
+        var left_x;
+        var right_x;
+        var top_y;
+        var bottom_y;
+
+        // Extra space outside the drawn screen to make curves go past the image borders
+        var decimal_overhang;
+
+        // Resolution Multiplier. Default to .005, lower will be better quality
+        var res_mult;
+
+        // Converting screen coordinates to coordiantes in a smaller array
+        var resolution;
+        var num_columns;
+        var num_rows;
+        var grid;
+
+        var default_angle = 0;
+
+        // HOW CURVES RESPOND TO GRID ----------------------------------------------------------------------------
+        // Specifies how a curve responds to the angles of the grid
+        var curve_types = ['#multi_curve_worker', '#velocity_worker', '#turning_worker', '#slinky_worker']
+        const multi_curve_worker = 0
+        const velocity_worker = 1
+        const turning_worker = 2
+        const slinky_worker = 3
+        var curve_type_index = multi_curve_worker;
+        // For velocity and turning workers
+        var addition_values = [.05];
+
+        // Settings for early curve termination
+        var backwards_traversal = true;
+
+        var collision_removal = true;
+        var same_color_allowed = false;
+        var self_collision_removal = false; // WIP
+
+        var center_destruction = true;
+        var distance_to_center = 5;
+
+        // Decides if a curve will terminate on a collision or whether it simply wont draw when colliding but continue
+        var instant_death = true;
+
+
+        // Drawn map is an array where each curve draws its own ID onto the grid
+        var drawn_map;
+        // Color map is an array where each curve draws its own COLOR onto the grid
+        var color_map;
+        // Ensures that curves aren't drawn if they are killed while still too short
+        var min_length;
+
+
+        // STYLE -------------------------------------------------------------------------------------------------
+        // Width of lines
+        var min_thickness = null;
+        var max_thickness = null;
+        // Invisible extra width for adding space between lines
+        var stroke_spacing = 1;
+
+
+        // Number of total threads to calculate curves (lower this number if the page runs out of data)
+        var total_workers;
+        // Number of total curves
+        var total_curves;
+        // Counts the number of completed cruves, drawn or not
+        var workers_complete;
+        // Counts successfully drawn curves
+        var curves_drawn_success;
+
+        // Length of each step
+        var length_of_step;
+        // Range for number of steps per curve
+        var step_min;
+        var step_max;
+
+        // Will fill with colors in the color palette
+        var chosen_colors;
+
+        // Null will turn background color to the first color in the color palette. This may get set to black before that would happen
+        var background_color = null;
+
+        var default_angle = 0;
+
+        var getAngle;
+        var a;
+        var template;
+
+        class Template {
+            static templates = [];
+
+            constructor(name, weight, angle_template = default_template, angle_modifiers, worker_type, drawSettings) {
+                this.name = name;
+                this.angle_template = angle_template;
+                this.angle_modifiers = angle_modifiers;
+                this.worker_type = worker_type;
+                this.drawSettings = drawSettings;
+
+                for (let i = 0; i < weight; i++) {
+                    Template.templates.push(this);
+                }
+            }
+
+            setSettings() {
+                defaults();
+
+                var angle_template = this.angle_template;
+                var angle_modifiers = this.angle_modifiers;
+                var worker_type = this.worker_type;
+                var drawSettings = this.drawSettings;
+
+                getAngle = function (row, col, theta_offset) {
+                    var angle = angle_template[0](row, col, theta_offset, angle_template[1]);
+                    for (let i = 0; i < angle_modifiers.length; i++) {
+                        angle = angle_modifiers[i][0](angle, row, col, theta_offset, angle_modifiers[i][1])
+                    }
+                    return (angle + theta_offset) % (2 * PI);
+                };
+                curve_type_index = this.worker_type;
+
+                if (this.drawSettings != null && this.drawSettings != 0) {
+                    for (let i = 0; i < this.drawSettings.length; i++) {
+                        this.drawSettings[i][0](this.drawSettings[i][1]);
+                    }
+                }
+
+                randomAdd();
+
+                total_curves * (width * height / 640000);
+            }
+        }
+
+        var last_file_made = 0;
+
+        var drawings_made = 0;
+        var total_drawings = 20;
+        var save_and_restart = false;
+
+        var save_data = false;
+        var drawing_data = [];
+        if (last_file_made == 0) {
+            drawing_data = ["Official Name*Curve Name*Background Color*Number of Curves*Curve Type*Curve Width Range*Angle Type*Curve Color Type"];
+        }
+
+        var num = 2000;
+        var noiseScale = 500, noiseStrength = 1;
+        var particles = [num];
+
+        class Particle {
+            constructor(_loc, _dir, _speed) {
+                this.loc = _loc;
+                this.dir = _dir;
+                this.speed = _speed;
+                // var col;
+            }
+            run() {
+                this.move();
+                this.checkEdges();
+                this.update();
+            }
+            move() {
+                let angle = noise(this.loc.x / noiseScale, this.loc.y / noiseScale, frameCount / noiseScale) * TWO_PI * noiseStrength; //0-2PI
+                this.dir.x = cos(angle);
+                this.dir.y = sin(angle);
+                var vel = this.dir.copy();
+                var d = 1;  //direction change 
+                vel.mult(this.speed * d); //vel = vel * (speed*d)
+                this.loc.add(vel); //loc = loc + vel
+            }
+            checkEdges() {
+                //float distance = dist(width/2, height/2, loc.x, loc.y);
+                //if (distance>150) {
+                if (this.loc.x < 0 || this.loc.x > width || this.loc.y < 0 || this.loc.y > height) {
+                    this.loc.x = random(width * 1.2);
+                    this.loc.y = random(height);
+                }
+            }
+            update() {
+                fill(255);
+                ellipse(this.loc.x, this.loc.y, this.loc.z);
+            }
+        }
+
+        function setup() {
+            thicknesses = [[thickness, { 'min': 2, 'max': 4 }], [thickness, { 'min': 2, 'max': 4 }], [thickness, { 'min': 2, 'max': 4 }], [thickness, { 'min': 2, 'max': 4 }], [thickness, { 'min': 2, 'max': 4 }], [thickness, { 'min': 2, 'max': 4 }], [thickness, { 'min': 2, 'max': 4 }],
+            [thickness, { 'min': 3, 'max': 6 }], [thickness, { 'min': 3, 'max': 6 }], [thickness, { 'min': 3, 'max': 6 }], [thickness, { 'min': 3, 'max': 6 }],
+            [thickness, { 'min': 2, 'max': 6 }]]
+
+            // Normal Perlin
+            new Template("Spaced Perlin", 15, [perlin, { "row_scaling": .005, "col_scaling": .005 }], [], multi_curve_worker, [[spacedSettings, {}], [curveLength, { 'min': 100, 'max': 150, 'length_per': 1 }]]);
+            new Template("Spaced Perlin", 5, [perlin, { "row_scaling": .005, "col_scaling": .005 }], [], multi_curve_worker, [[spacedSettings, {}]]);
+            new Template("Short Spaced Perlin", 5, [perlin, { "row_scaling": .005, "col_scaling": .005 }], [], multi_curve_worker, [[spacedSettings, {}], [curveLength, { 'min': 50, 'max': 75, 'length_per': 1 }]]);
+
+            // Dicrhromes
+            new Template("Spaced Perlin", 5, [perlin, { "row_scaling": .005, "col_scaling": .005 }], [], multi_curve_worker, [[spacedSettings, {}], [curveLength, { 'min': 100, 'max': 150, 'length_per': 1 }], [deathChecks, { 'collision': true, 'same_color': false }], [randomColors, { "num_colors": 2 }], [numCurves, { 'num': 500 }]]);
+            new Template("Color-Spaced Perlin", 5, [perlin, { "row_scaling": .005, "col_scaling": .005 }], [], multi_curve_worker, [[spacedSettings, {}], [curveLength, { 'min': 100, 'max': 150, 'length_per': 1 }], [deathChecks, { 'collision': true, 'same_color': true }], [randomColors, { "num_colors": 2 }], [numCurves, { 'num': 500 }]]);
+
+            new Template("Rounded Perlin", 3, [perlin, { "row_scaling": .005, "col_scaling": .005 }], [[rounding, { "round_value": PI / 8 }]], multi_curve_worker, [[screenFillSettings, {}]]);
+            new Template("Spaced Rounded Perlin", 6, [perlin, { "row_scaling": .005, "col_scaling": .005 }], [[rounding, { "round_value": PI / 8 }]], multi_curve_worker, [[spacedSettings, {}]]);
+            new Template("Rounded Perlin", 3, [perlin, { "row_scaling": .005, "col_scaling": .005 }], [[rounding, { "round_value": PI / 4 }]], multi_curve_worker, [[screenFillSettings, {}]]);
+            new Template("Spaced Rounded Perlin", 6, [perlin, { "row_scaling": .005, "col_scaling": .005 }], [[rounding, { "round_value": PI / 4 }]], multi_curve_worker, [[spacedSettings, {}]]);
+
+            new Template("Short Perlin", 2, [perlin, { "row_scaling": .005, "col_scaling": .005 }], [], multi_curve_worker, [[screenFillSettings, {}], [curveLength, { 'min': 100, 'max': 150, 'length_per': 1 }]]);
+            new Template("Long Perlin", 5, [perlin, { "row_scaling": .005, "col_scaling": .005 }], [], multi_curve_worker, [[screenFillSettings, {}], [curveLength, { 'min': 500, 'max': 750, 'length_per': 1 }]]);
+
+            new Template("Stretched Perlin", 2, [perlin, { "row_scaling": .025, "col_scaling": .005 }], [], multi_curve_worker, [[screenFillSettings, {}], [curveLength, { 'min': 500, 'max': 750, 'length_per': 1 }]]);
+            new Template("Stretched Perlin", 2, [perlin, { "row_scaling": .005, "col_scaling": .025 }], [], multi_curve_worker, [[screenFillSettings, {}], [curveLength, { 'min': 500, 'max': 750, 'length_per': 1 }]]);
+
+            new Template("Spaced Stretched Perlin", 6, [perlin, { "row_scaling": .025, "col_scaling": .005 }], [], multi_curve_worker, [[spacedSettings, {}], [curveLength, { 'min': 100, 'max': 150, 'length_per': 1 }]]);
+            new Template("Spaced Stretched Perlin", 6, [perlin, { "row_scaling": .005, "col_scaling": .025 }], [], multi_curve_worker, [[spacedSettings, {}], [curveLength, { 'min': 100, 'max': 150, 'length_per': 1 }]]);
+
+            new Template("Circular Perlin", 3, [thetaPerlin, { "theta_multiplier": .005, "r_multiplier": .025 }], [], multi_curve_worker, [[screenFillSettings, {}], [curveLength, { 'min': 200, 'max': 300, 'length_per': 1 }]]);
+            new Template("Spaced Circular Perlin", 6, [thetaPerlin, { "theta_multiplier": .005, "r_multiplier": .025 }], [], multi_curve_worker, [[spacedSettings, {}], [curveLength, { 'min': 100, 'max': 150, 'length_per': 1 }]]);
+            new Template("Radius Perlin", 3, [rModifiedPerlin, { "row_scaling": .005, "col_scaling": .005 }], [], multi_curve_worker, [[screenFillSettings, {}], [curveLength, { 'min': 200, 'max': 300, 'length_per': 1 }]]);
+
+            // Good
+            new Template("Spaced Radius Perlin", 5, [rModifiedPerlin, { "row_scaling": .005, "col_scaling": .005 }], [], multi_curve_worker, [[spacedSettings, {}], [curveLength, { 'min': 100, 'max': 150, 'length_per': 1 }]]);
+
+            // Circles
+            new Template("Spaced Circles", 1, [circles, {}], [], multi_curve_worker, [[screenFillSettings, {}], [selfDestruction, {}], [stepLength, { 'length_per': .25 }], [numCurves, { 'num': 250 }]]);
+            new Template("Circles", 1, [circles, {}], [], multi_curve_worker, [[spacedSettings, {}], [selfDestruction, {}], [centerDestruction, { 'distance': 20 }]]);
+
+            // Squares
+            new Template("Squares", 1, [circles, {}], [[rounding, { "round_value": PI / 2 }]], multi_curve_worker, [[screenFillSettings, {}], [selfDestruction, {}]]);
+
+            // Octagons
+            new Template("Octagons", 1, [circles, {}], [[rounding, { "round_value": PI / 4 }]], multi_curve_worker, [[screenFillSettings, {}], [numCurves, { 'num': 1000 }]]);
+
+            // Spirals
+            new Template("Spirals", 2, [circles, {}], [[pulling, { "h_pull_power": 1, "v_pull_power": 1 }]], multi_curve_worker, [[screenFillSettings, {}]]);
+            new Template("Spaced Spirals", 4, [circles, {}], [[pulling, { "h_pull_power": 1, "v_pull_power": 1 }]], multi_curve_worker, [[spacedSettings, {}]]);
+            new Template("Skewed Spirals", 2, [circles, {}], [[pulling, { "h_pull_power": 1, "v_pull_power": .125 }]], multi_curve_worker, [[screenFillSettings, {}]]);
+            new Template("Spaced Skewed Spirals", 4, [circles, {}], [[pulling, { "h_pull_power": 1, "v_pull_power": .125 }]], multi_curve_worker, [[spacedSettings, {}]]);
+
+            // Cardioids and flowers
+            new Template("Carioids", 1, [flowers, { 'a': 3 }], [], multi_curve_worker, [[screenFillSettings, {}]])
+            for (let i = 4; i < 9; i++) {
+                new Template('Short ' + (i - 2).toString() + "-Petal Roses", 1, [flowers, { 'a': i }], [], multi_curve_worker, [[screenFillSettings, {}], [curveLength, { 'min': 30, 'max': 30, 'length_per': 1 }], [numCurves, { 'num': 4000 }], [backTraverse, { 'on': true }], [noInstantDeath, {}], [centerDestruction, { 'distance': 20 }]])
+                new Template('Spaced ' + (i - 2).toString() + "-Petal Roses", 1, [flowers, { 'a': i }], [], multi_curve_worker, [[spacedSettings, {}], [curveLength, { 'min': 100, 'max': 150, 'length_per': 1 }], [numCurves, { 'num': 4000 }], [backTraverse, { 'on': true }], [noInstantDeath, {}], [centerDestruction, { 'distance': 10 }]])
+            }
+
+            // Slinkies/Curls
+            new Template("Large Perlin Squiggles", 6, [perlin, { "row_scaling": .005, "col_scaling": .005 }], [], slinky_worker, [[slinkySettings, { "addition_values": [PI / 16, PI / 8, 1, 3] }], [numCurves, { 'num': 500 }], thicknesses[1], [noInstantDeath, {}]]);
+            new Template("Spaced Large Perlin Squiggles", 6, [perlin, { "row_scaling": .005, "col_scaling": .005 }], [], slinky_worker, [[slinkySettings, { "addition_values": [PI / 16, PI / 8, 1, 3] }], [numCurves, { 'num': 4000 }], [deathChecks, { 'collision': true }], thicknesses[1], [noInstantDeath, {}]]);
+            new Template("Small Perlin Squiggles", 6, [perlin, { "row_scaling": .005, "col_scaling": .005 }], [], slinky_worker, [[slinkySettings, { "addition_values": [PI / 4, PI / 2, 3, 5] }], [numCurves, { 'num': 500 }], thicknesses[1], [noInstantDeath, {}]]);
+            new Template("Spaced Small Perlin Squiggles", 6, [perlin, { "row_scaling": .005, "col_scaling": .005 }], [], slinky_worker, [[slinkySettings, { "addition_values": [PI / 4, PI / 2, 3, 5] }], [numCurves, { 'num': 4000 }], [deathChecks, { 'collision': true }], thicknesses[1], [noInstantDeath, {}]]);
+            new Template("Spaced Large Perlin Slinkies", 10, [perlin, { "row_scaling": .005, "col_scaling": .005 }], [], slinky_worker, [[slinkySettings, { "addition_values": [PI / 32, PI / 16, .2, .4] }], [thickness, { 'min': 2, 'max': 4 }], [numCurves, { 'num': 4000 }], [deathChecks, { 'collision': true }], thicknesses[1], [noInstantDeath, {}]]);
+
+            // new Template("Velocities", 5,  [perlin, {"row_scaling" : .005, "col_scaling" : .005}], [], velocity_worker,  [[backTraverse, {'on' : false}]])
+            // new Template("U-Shaped Velocities", 5,  [perlin, {"row_scaling" : .005, "col_scaling" : .005}], [], velocity_worker, [])
+            // new Template("Circles vs. Squiggles", 15,  [perlin, {"row_scaling" : .005, "col_scaling" : .005}], [], turning_worker, [[backTraverse, {'on' : false}]])
+            // new Template("Circles vs. Squiggles", 5,  [rModifiedPerlin, {"row_scaling" : .005, "col_scaling" : .005}], [], turning_worker, [[backTraverse, {'on' : false}]])
+            // new Template("Quadrant Separated Circles vs. Squiggles", 2,  [circles, {}], [], turning_worker, [[backTraverse, {'on' : false}]])
+            // new Template("Circular Circles vs. Squiggles", 15, [thetaPerlin, {"theta_multiplier" : .005, "r_multiplier" : .025}] , [], turning_worker, [[backTraverse, {'on' : false}]])
+
+            background_color = new Color(0, 0, 0);
+
+            // P5.JS SETUP ---------------------------------------------------------
+            createCanvas(400, 400);
+            colorMode(HSL, 360);
+            setupCustom();
+        }
+
+        function randomAdd() {
+            random_added_draw_settings = [
+                [3, randomColors, { "num_colors": Math.floor(random() * 5 + 1) }],
+                [3, monochromatic, { "num_colors": Math.floor(random() * 5 + 1) }],
+                [10, mainComplimentToBackground, {}],
+                [100, chooseThickness, {}],
+                [25, semiFill, {}]
+            ]
+
+            for (let i = 0; i < random_added_draw_settings.length; i++) {
+                if (random() * 100 < random_added_draw_settings[i][0]) {
+                    random_added_draw_settings[i][1](random_added_draw_settings[i][2]);
+                }
+            }
+        }
+
+        function setupCustom() {
+            // GENERATE COLORS -----------------------------------------------------
+            chosen_colors = [];
+            setChosenColors(3, 2, 2, 2, 3, 3);
+
+            template = null;
+            template = Template.templates[Math.floor(lerp(0, Template.templates.length, random()))]
+            template.setSettings();
+
+            if (background_color == null) {
+                background_color = new Color(chosen_colors[0].hue, chosen_colors[0].saturation, chosen_colors[0].lightness);
+            }
+
+            workers_complete = 0;
+            curves_drawn_success = 0;
+            noiseSeed(Math.floor(lerp(0, 100000, random())));
+
+            // DEFINING SCREEN BOUNDARIES ------------------------------------------
+            left_x = Math.floor(width * -(decimal_overhang));
+            right_x = Math.floor(width * (1 + (decimal_overhang)));
+            top_y = Math.floor(height * -(decimal_overhang));
+            bottom_y = Math.floor(height * (1 + (decimal_overhang)));
+
+            // CREATING MAPS FOR DETECTING COLLISIONS ------------------------------
+            drawn_map = [];
+            for (let row = 0; row < Math.floor(bottom_y - top_y); row++) {
+                var row_list = [];
+                for (let col = 0; col < Math.floor(right_x - left_x); col++) {
+                    row_list.push(0);
+                }
+                drawn_map.push(row_list);
+            }
+
+            color_map = [];
+            for (let row = 0; row < Math.floor(bottom_y - top_y); row++) {
+                var row_list = [];
+                for (let col = 0; col < Math.floor(right_x - left_x); col++) {
+                    row_list.push(0);
+                }
+                color_map.push(row_list);
+            }
+
+            // CREATING ANGLE GRID -------------------------------------------------
+            resolution = Math.floor(width * res_mult);
+            num_columns = (right_x - left_x) / resolution;
+            num_rows = (bottom_y - top_y) / resolution;
+            grid = [];
+            for (let i = 0; i < num_rows; i++) {
+                grid.push([]);
+            }
+
+            // Fill with angles
+            theta_offset = random() * 2 * PI
+            a = Math.floor(lerp(1, 15, random()));
+            for (let row = 0; row < num_rows; row++) {
+                for (let col = 0; col < num_columns; col++) {
+                    grid[row][col] = getAngle(row, col, a, theta_offset);
+                }
+            }
+
+            for (let i = 0; i < num; i++) {
+                //x value start slightly outside the right of canvas, z value how close to viewer
+                var loc = createVector(random(width * 1.2), random(height), 2);
+                var angle = 0; //any value to initialize
+                var dir = createVector(cos(angle), sin(angle));
+                var speed = random(0.5, 2);
+                // var speed = random(5,map(mouseX,0,width,5,20));   // faster
+                particles[i] = new Particle(loc, dir, speed);
+            }
+
+        }
+
+        function draw() {
+            background(background_color.hue, background_color.saturation, background_color.lightness);
+            noFill();
+            noLoop();
+
+            var curves_made = 0;
+            var curves_made_before = 0;
+
+            curve_per_worker = Math.floor(total_curves / total_workers);
+            for (let i = 0; i < min(total_workers, total_curves); i++) {
+                w = getWorker();
+                curves_for_this_worker = curve_per_worker;
+                if (i < total_curves % total_workers) {
+                    curves_for_this_worker++;
+                }
+
+                x_list = [];
+                y_list = [];
+                step_length_list = [];
+                num_steps_list = [];
+                for (let j = 0; j < curves_for_this_worker; j++) {
+                    [x, y] = randomCoordinates();
+                    //[x, y] = getStartCoordinates(curves_made, total_curves);
+                    //[x, y] = findWhiteSpace(1, 1000);
+
+                    x_list.push(x);
+                    y_list.push(y);
+
+                    var step_length = length_of_step;
+                    step_length_list.push(step_length);
+                    var num_steps = Math.floor(lerp(step_min, step_max, random()));
+                    num_steps_list.push(num_steps);
+                    curves_made += 1;
+                }
+                w.postMessage({ "args": [x_list, y_list, grid, left_x, top_y, resolution, step_length_list, num_steps_list, num_columns, num_rows, curves_made - curves_for_this_worker, backwards_traversal, random(), addition_values] });
+            }
+
+            // for (let i = 0; i < particles.length; i++) {
+            //     particles[i].run();
+            // }
+
+
+        }
+
+        // HSL color storage
+        class Color {
+            constructor(H, S, L) {
+                this.hue = Math.floor(H) % 360;
+                this.saturation = Math.floor(S) % 360;
+                this.lightness = Math.floor(L) % 360;
+            }
+
+            get values() {
+                return [this.hue, this.saturation, this.lightness]
+            }
+
+            toString() {
+                return '[' + this.hue.toString() + ',' + this.saturation.toString() + ',' + this.lightness.toString() + ']'
+            }
+        }
+
+        class RandomColor extends Color {
+            constructor() {
+                super()
+
+                this.hue = Math.floor(random() * 360);
+                this.saturation = Math.floor(random() * 360);
+                this.lightness = Math.floor(random() * 260 + 50);
+            }
+        }
+
+        // A list of the same color with varying lightness
+        class MonochromaticSet {
+            constructor(lDiff, lMin, lMax, startingColor = new Color(random() * 360, random() * 100 + 260, 100)) {
+                this.colors = [];
+
+                this.startingColor = startingColor;
+                this.lDiff = lDiff;
+                this.lMin = lMin;
+                this.lMax = lMax;
+
+                let hue = startingColor.hue;
+                let sat = startingColor.saturation;
+                let startL = (startingColor.lightness - lMin) % lDiff + lMin;
+                for (let L = startL; L < lMax; L += lDiff) {
+                    this.colors.push(new Color(hue, sat, L));
+                }
+            }
+
+            // Makes another MonochromaticSet with a slightly different hue
+            createSecondary(lDiff = this.lDiff, lMin = this.lMin, lMax = this.lMax, hOff = 30) {
+                return new MonochromaticSet(lDiff, lMin, lMax, new Color((this.startingColor.hue + hOff) % 360, this.startingColor.saturation, this.startingColor.lightness));
+            }
+        }
+
+        // Generates color palette
+        function setChosenColors(sets = 2, min_off_set = 1, max_off_set = 3, colors_per_set = 3, min_off_color = 3, max_off_color = 5) {
+            var colors = [];
+
+            colors.push(new MonochromaticSet(12, 0, 360))
+            for (let i = 0; i < 11; i++) {
+                colors.push(colors[colors.length - 1].createSecondary())
+            }
+
+            var color_offs = [];
+            for (let set = 0; set < sets; set++) {
+                color_offs.push(Math.floor(lerp(min_off_color, max_off_color + 1, random())));
+            }
+
+
+            var set_index = Math.floor(lerp(0, colors.length, random()));
+            for (let set = 0; set < sets; set++) {
+                var color_index = Math.floor(lerp(0, colors[set_index].colors.length, random()));
+                for (let color = 0; color < colors_per_set; color++) {
+                    chosen_colors.push(colors[set_index].colors[color_index]);
+                    color_index += color_offs[set];
+                    color_index %= colors[set_index].colors.length;
+                }
+                set_index += Math.floor(lerp(min_off_set, max_off_set + 1, random()));
+                set_index %= colors.length;
+            }
+        }
+
+        // Rounds an ANGLE to the closest multiple of MULTIPLE 
+        function roundAngleTo(angle, multiple) {
+            return round(angle / multiple) * multiple;
+        }
+
+        // Checks a radius around position (X,Y) in the MAP and sees if there are any values other than 0 and an IGNORED value
+        function checkProximity(x, y, radius, ignored, map = drawn_map) {
+            for (let x_off = -radius; x_off <= radius; x_off++) {
+                for (let y_off = -radius; y_off <= radius; y_off++) {
+                    if (y + y_off >= 0 && y + y_off < map.length && x + x_off >= 0 && x + x_off < map[0].length) {
+                        if (map[y + y_off][x + x_off] != 0 && map[y + y_off][x + x_off] != ignored) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        // Check if the X and Y postion is within specified RADIUS of the center (CENTER_X, CENTER_Y)
+        function checkCenterCollision(x, y, center_x, center_y, radius) {
+            if (sqrt(Math.pow((x - center_x), 2) + Math.pow(y - center_y, 2)) < radius) {
+                return true;
+            }
+            return false;
+        }
+
+        // WIP, checks if ID occurs in the MAP at a certain DIRECTION and DISTANCE away from position (X, Y)
+        function checkSelfCollision(x, y, distance, direction, map, id) {
+            FOV = PI
+            distance += 3
+
+            for (let radian = direction - FOV / 2; radian <= direction - FOV / 2; radian += PI / 4) {
+                proposed_x = Math.floor(x + Math.cos(radian) * distance)
+                proposed_y = Math.floor(y + Math.sin(radian) * distance)
+
+                if (proposed_y >= 0 && proposed_y < map.length && proposed_x >= 0 && proposed_x < map[0].length) {
+                    if (map[proposed_y][proposed_x] == id) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        // Draws a square of a certain RADIUS at a position (X, Y) in specified MAP by setting the grid to a VALUE
+        function drawToMap(x, y, value, radius = 1, map = drawn_map) {
+            for (let x_off = -radius; x_off <= radius; x_off++) {
+                for (let y_off = -radius; y_off <= radius; y_off++) {
+                    if (y + y_off >= 0 && y + y_off < map.length && x + x_off >= 0 && x + x_off < map[0].length) {
+                        map[y + y_off][x + x_off] = value;
+                    }
+                }
+            }
+        }
+
+        // Where worker is generates lists of curves
+        function getWorker() {
+            var blob = new Blob([
+                document.querySelector(curve_types[curve_type_index]).textContent
+            ], { type: "text/javascript" })
+
+            // Note: window.webkitURL.createObjectURL() in Chrome 10+.
+            w = new Worker(window.URL.createObjectURL(blob));
+            w.onmessage = function (e) {
+                curves = e.data.curves;
+                curves_made_before = e.data.curves_made_before;
+                for (let n = 0; n < curves.length; n++) {
+                    points = curves[n];
+                    stroke_width = Math.floor(lerp(min_thickness, max_thickness + 1, random()));
+                    strokeWeight(stroke_width);
+                    color = chosen_colors[floor(random() * chosen_colors.length)]
+                    stroke(color.hue, color.saturation, color.lightness, 300);
+
+                    last_point_x = -1000;
+                    last_point_y = -1000;
+
+                    var continue_curve = true;
+                    var started = false;
+                    var this_start = 0;
+                    var this_last = 0;
+                    for (let i = 0; (i < points.length && (continue_curve || !started)); i++) {
+                        var colliding = false;
+                        // COLLISIONS WITH OTHER CURVES ---------------------------------------------------------------------------------------------
+                        if (collision_removal) {
+                            // SAME COLOR CAN INTERSECT (SAME COLOR CURVES DO NOT KILL)
+                            if (same_color_allowed) {
+                                if (checkProximity(Math.floor(points[i].x - left_x), Math.floor(points[i].y - top_y), stroke_width + stroke_spacing, color, color_map)) {
+                                    colliding = true;
+                                } else {
+                                    drawToMap(Math.floor(points[i].x - left_x), Math.floor(points[i].y - top_y), color, Math.floor(stroke_width / 2), color_map);
+                                }
+                            } else { // IF SAME COLOR CAN'T INTERSECT (ALL OTHER CURVES KILL)
+                                if (checkProximity(Math.floor(points[i].x - left_x), Math.floor(points[i].y - top_y), stroke_width + stroke_spacing, curves_made_before + 1 + n, drawn_map)) {
+                                    colliding = true;
+                                }
+                            }
+                        }
+
+                        // COLLIDING WITH THE SAME CURVE (WIP) --------------------------------------------------------------------------------------
+                        if (i > 0 && self_collision_removal) {
+                            if (checkSelfCollision(Math.floor(points[i].x - left_x), Math.floor(points[i].y - top_y), Math.floor((stroke_width + stroke_spacing) / 2), angleFromXY(points[i].x - points[i - 1].x, points[i].y - points[i - 1].y), drawn_map, curves_made_before + 1 + n)) {
+                                colliding = true;
+                            }
+                        }
+
+                        // COLLIDING WITH THE CENTER ------------------------------------------------------------------------------------------------
+                        if (center_destruction) {
+                            if (checkCenterCollision(points[i].x, points[i].y, width / 2, height / 2, distance_to_center)) {
+                                colliding = true;
+                            }
+                        }
+
+                        if (colliding) {
+                            continue_curve = false;
+                            if (!instant_death) {
+                                if (started) {
+                                    if (i - this_start > min_length) {
+                                        endShape();
+                                        curves_drawn_success++;
+                                    }
+                                }
+                                started = false;
+                            }
+                        }
+
+                        if (instant_death && !continue_curve && started) {
+                            if (i - this_start > min_length) {
+                                endShape();
+                                curves_drawn_success++;
+                            }
+                        }
+
+                        // DRAWING TO THE MAP IF NECESSARY ------------------------------------------------------------------------------------------
+                        if (continue_curve && (self_collision_removal || (collision_removal && !(same_color_allowed)))) {
+                            drawToMap(Math.floor(points[i].x - left_x), Math.floor(points[i].y - top_y), curves_made_before + 1 + n, Math.floor(stroke_width / 2), drawn_map);
+                        }
+
+                        if (continue_curve && !started) {
+                            started = true;
+                            this_start = i;
+
+                            beginShape();
+                            curveVertex(points[i].x, points[i].y);
+                            last_point_x = points[i].x;
+                            last_point_y = points[i].y;
+                        } else if (continue_curve) {
+                            //if (abs(Math.floor(points[i].x) - Math.floor(last_point_x)) > .001 || abs(Math.floor(points[i].y) - Math.floor(last_point_y)) > .001) {
+                            curveVertex(Math.round(points[i].x * 10000) / 10000, Math.round(points[i].y * 10000) / 10000);
+                            last_point_x = points[i].x;
+                            last_point_y = points[i].y;
+                            this_last = i;
+                            //}
+                        }
+
+                        if (!started) {
+                            continue_curve = true;
+                        }
+                    }
+                    // If curve died naturally, draw it
+                    if (continue_curve) {
+                        if (this_last - this_start > min_length) {
+                            endShape();
+                            curves_drawn_success++;
+                        }
+                    }
+                }
+
+                workers_complete += 1
+
+                if (workers_complete == min(total_workers, total_curves)) {
+                    new_image_string = '';
+
+                    new_image_string += "Ebb and Flow #" + (drawings_made + 1 + last_file_made) + "*";
+
+                    new_image_string += "curve(" + (drawings_made + 1 + last_file_made) + ").jpg*";
+
+                    new_image_string += background_color.toString() + '*';
+                    new_image_string += curves_drawn_success.toString() + '*';
+                    new_image_string += ["Setter", "Velocity", "Turning", "Spiral Setter"][curve_type_index] + '*';
+                    new_image_string += min_thickness.toString() + '-' + max_thickness.toString() + '*';
+                    new_image_string += template.name + '*';
+
+                    var shaded = false;
+                    for (let i = 1; i < chosen_colors.length && !shaded; i++) {
+                        if (chosen_colors[i].hue != chosen_colors[0].hue && chosen_colors[i].saturation != chosen_colors[0].saturation) {
+                            new_image_string += 'Shaded Monochromatic*'
+                            shaded = true;
+                        }
+                    }
+                    if (!shaded) {
+                        if (chosen_colors.length == 1) {
+                            new_image_string += 'Monochromatic*'
+                        }
+                        else if (chosen_colors.length == 2) {
+                            new_image_string += 'Dichromatic*'
+                        }
+                        else if (chosen_colors.length == 3) {
+                            new_image_string += 'Trichromatic*'
+                        } else {
+                            new_image_string += 'Default*'
+                        }
+                    }
+
+                    drawing_data.push(new_image_string);
+
+                    if (save_and_restart) {
+                        saveCanvas('curve', 'jpg');
+                        drawings_made++;
+
+                        if (drawings_made < total_drawings) {
+                            setupCustom();
+                            draw();
+                        } else if (save_data) {
+                            var a = document.createElement("a");
+                            a.href = window.URL.createObjectURL(new Blob([drawing_data.join("\n")], { type: "text/plain" }));
+                            a.download = "curveData.txt";
+                            a.click()
+                        }
+                    }
+                }
+            };
+            return w;
+        }
+
+        function angleFromXY(x, y) {
+            if (x == 0) {
+                if (y >= 0) {
+                    return PI / 2;
+                } else {
+                    return 3 * PI / 2;
+                }
+            }
+
+            theta = (Math.atan(y / x)) + 2 * PI;
+            if (x < 0) {
+                theta += PI;
+            }
+            return theta;
+        }
+
+        function findWhiteSpace(radius, max_tries) {
+            row = 0;
+            col = 0;
+
+            found = false;
+            tries = 0;
+            while (!found && tries < max_tries) {
+                tries += 1
+                row = Math.floor(random() * drawn_map.length);
+                col = Math.floor(random() * drawn_map[0].length);
+
+                found = true;
+                for (let row_off = -radius; row_off <= radius && found; row_off++) {
+                    for (let col_off = -radius; col_off <= radius && found; col_off++) {
+                        if (row + row_off >= 0 && row + row_off < drawn_map.length && col + col_off >= 0 && col + col_off < drawn_map[0].length) {
+                            if (drawn_map[row + row_off][col + col_off] != 0) {
+                                found = false;
+                            }
+                        }
+                    }
+                }
+            }
+
+
+            return [row * resolution, col * resolution]
+        }
+
+        function randomCoordinates() {
+            var x = random() * (right_x - left_x) - width * decimal_overhang;
+            var y = random() * (bottom_y - top_y) - height * decimal_overhang;
+
+            return [x, y];
+        }
+
+        function getStartCoordinates(curves_made, curves) {
+            curves_per_row = Math.floor(sqrt(curves * num_columns / num_rows));
+            col_width = (right_x - left_x) / curves_per_row;
+            row_height = (bottom_y - top_y) / curves_per_row * num_columns / num_rows;
+            col = Math.floor(curves_made / curves_per_row);
+            row = Math.floor(curves_made % curves_per_row);
+
+            var x = col * col_width + left_x + Math.floor(random() * col_width - col_width / 3);
+            var y = row * row_height + top_y + Math.floor(random() * row_height - col_width / 3);
+
+            return [x, y];
+        }
+    </script>
+</body>
+
+</html>
