@@ -1,101 +1,103 @@
 <!DOCTYPE html>
 <html>
+
 <head>
 	<title>Terrain Generator</title>
 </head>
+
 <body>
-	<script src = "p5.js"></script>
-	<script src = "sketch.js"></script>
+	<script src="p5.js"></script>
+	<script src="sketch.js"></script>
 	<script type="text/javascript">
 		var HEIGHT = 1000;
-        var WIDTH = 1500;
-        
-        var terrainValues = [];
+		var WIDTH = 1500;
+
+		var terrainValues = [];
 
 
-        var layers = 10;
-        var widthPerLayer = 400; 
+		var layers = 5;
+		var widthPerLayer = 400;
 
-		function setup(){
+		function setup() {
 			createCanvas(WIDTH, HEIGHT);
 			angleMode(DEGREES);
-			
-			for(var y = 0; y < layers; y++) {
+
+			for (var y = 0; y < layers; y++) {
 				noiseSeed();
-                terrainValues.push([]);
-				for(var x = 0; x < widthPerLayer; x++) {
-                    var xFraction = x/widthPerLayer*2000
-                    var noiseVal = 
-                        noise(xFraction * (1/300))  * 1 +
-                        noise(xFraction * (1/150))  * .5 +
-                        noise(xFraction * (1/75))   * .25 +
-                        noise(xFraction * (1/37.5)) * .125;
-                    //noiseVal /= 1.875;
-                    
-                    
-                    var max = y*(HEIGHT/2/layers);
-                    var min = y*(HEIGHT/2/layers)+300;
-                    terrainValues[y].push((1-noiseVal)*(max-min)+min);
-                }
+				terrainValues.push([]);
+				for (var x = 0; x < widthPerLayer; x++) {
+					var xFraction = x / widthPerLayer * 2000
+					var noiseVal =
+						noise(xFraction * (1)) * .03 +
+						noise(xFraction * (1 / 300)) * 1 +
+						noise(xFraction * (1 / 150)) * .5 +
+						noise(xFraction * (1 / 75)) * .25;// +
+					//noise(xFraction * (1 / 37.5)) * .125;
+					noiseVal /= 1.78;
+
+
+					var max = y * 120 + 200;
+					var min = y * 50 - 50;//y*40;
+					terrainValues[y].push(HEIGHT - ((noiseVal) * (max - min) + min));
+				}
 			}
 		}
 
 		function draw() {
 			background(0);
-			
+			setGradient(0, 0, WIDTH, HEIGHT, color(50, 50, 255), color(200, 100, 50), "Y")
+
 			noStroke();
 
 			//stroke(255);
 			//strokeWeight(0.5);
-		
+
 			//lights();
 			//directionalLight(128, 128, 128, 0, 0, -1);
-			
-			
+
+
 			//translate(-units*tileSize/2, 0, -units*tileSize/2);
 			//rotateX(90);
-			
-			for(var y = 0; y < layers; y++) {
-                console.log(y);
-                beginShape();
-                //shininess(15);
-                //specularMaterial(250);
-                fill(0,0,200*(y/layers)+55);
 
-                for(var x = 0; x < widthPerLayer; x++) {
-					vertex(x * width/widthPerLayer, terrainValues[y][x]);
+			for (var y = layers - 1; y >= 0; y--) {
+				console.log(y);
+				beginShape();
+				//shininess(15);
+				//specularMaterial(250);
+				fill(0, 0, 150 * (y / layers) + 55);
+
+				for (var x = 0; x < widthPerLayer; x++) {
+					vertex(x * width / widthPerLayer, terrainValues[y][x]);
 				}
-                vertex(width, height);
-                vertex(0, height);
-                endShape();
+				vertex(width, height);
+				vertex(0, height);
+				endShape();
 			}
-			
+
+		}
+
+		function setGradient(x, y, w, h, c1, c2, axis) {
+			noFill();
+			if (axis == "Y") {  // Top to bottom gradient
+				for (let i = y; i <= y + h; i++) {
+					var inter = map(i, y, y + h, 0, 1);
+					var c = lerpColor(c1, c2, inter);
+					stroke(c);
+					line(x, i, x + w, i);
+				}
+			}
+			else if (axis == "X") {  // Left to right gradient
+				for (let j = x; j <= x + w; j++) {
+					var inter2 = map(j, x, x + w, 0, 1);
+					var d = lerpColor(c1, c2, inter2);
+					stroke(d);
+					line(j, y, j, y + h);
+				}
+			}
 		}
 
 
 	</script>
 </body>
+
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
