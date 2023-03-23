@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>Planar Parameterization</title>
+	<script src="p5.js"></script>
+	<style>
+		canvas {
+			display: block;
+			margin: 0 auto;
+		}
+	</style>
+</head>
+
+<body>
+	<script>
+		let rows = 50;
+		let cols = 50;
+		let scl = 100;
+		let w = 1200;
+		let h = 600;
+
+		let plane = [];
+
+		let camX = 0;
+		let camY = -200;
+		let camZ = 500;
+
+		function setup() {
+			createCanvas(w, h, WEBGL);
+
+			for (let i = 0; i < rows; i++) {
+				plane[i] = [];
+				for (let j = 0; j < cols; j++) {
+					let u = map(i/rows,0,1,0,2*Math.PI*10);
+					let v = map(j/cols,0,1,0,2*Math.PI);
+					plane[i][j] = [scl*x(u, v), scl*y(u, v), scl*z(u, v)];
+				}
+			}
+		}
+
+		function x(u, v) {
+			return (cos(v)+2)*cos(u);
+		}
+
+		function y(u, v) {
+			return (cos(v)+2)*sin(u);
+		}
+
+		function z(u, v) {
+			return sin(v)-u/2;
+		}
+
+
+		function draw() {
+			background(0);
+
+			//stroke(0,100,0);
+			//noStroke();
+			//noFill();
+
+			// move and rotate camera
+			orbitControl();
+
+			// // generate terrain
+			// for (let y = 0; y < cols; y++) {
+			// 	for (let x = 0; x < rows; x++) {
+			// 		plane[x][y] = map(noise(x * 0.1, y * 0.1, 0), 0, 1, -100, 100);
+			// 	}
+			// }
+
+			// draw terrain
+			for (let i = 0; i < rows-1; i++) {
+				
+				for (let j = 0; j < cols-1; j++) {
+					beginShape();
+					fill(0,0,i/rows*100+155);
+
+					vertex(plane[i][j][0], plane[i][j][1], plane[i][j][2]);
+					vertex(plane[i+1][j][0], plane[i+1][j][1], plane[i+1][j][2]);
+					vertex(plane[i+1][j+1][0], plane[i+1][j+1][1], plane[i+1][j+1][2]);
+
+					vertex(plane[i][j][0], plane[i][j][1], plane[i][j][2]);
+					vertex(plane[i][j+1][0], plane[i][j+1][1], plane[i][j+1][2]);
+					vertex(plane[i+1][j+1][0], plane[i+1][j+1][1], plane[i+1][j+1][2]);
+
+					endShape();
+				}
+			}
+
+
+			// // Fill Seams
+			// for (let j = 0; j < cols-1; j++) {
+			// 	beginShape();
+			// 	fill(0,0,155);
+			// 	vertex(plane[rows-1][j][0], plane[rows-1][j][1], plane[rows-1][j][2]);
+			// 	vertex(plane[0][j][0], plane[0][j][1], plane[0][j][2]);
+			// 	vertex(plane[0][j+1][0], plane[0][j+1][1], plane[0][j+1][2]);
+
+			// 	vertex(plane[rows-1][j][0], plane[rows-1][j][1], plane[rows-1][j][2]);
+			// 	vertex(plane[rows-1][j+1][0], plane[rows-1][j+1][1], plane[rows-1][j+1][2]);
+			// 	vertex(plane[0][j+1][0], plane[0][j+1][1], plane[0][j+1][2]);
+			// 	endShape();
+			// }
+
+			for (let i = 0; i < rows-1; i++) {
+				beginShape();
+				fill(0,0,i/rows*100+155);
+				
+				vertex(plane[i][cols-1][0], plane[i][cols-1][1], plane[i][cols-1][2]);
+				vertex(plane[i+1][cols-1][0], plane[i+1][cols-1][1], plane[i+1][cols-1][2]);
+				vertex(plane[i+1][0][0], plane[i+1][0][1], plane[i+1][0][2]);
+
+				vertex(plane[i][cols-1][0], plane[i][cols-1][1], plane[i][cols-1][2]);
+				vertex(plane[i][0][0], plane[i][0][1], plane[i][0][2]);
+				vertex(plane[i+1][0][0], plane[i+1][0][1], plane[i+1][0][2]);
+				
+				endShape();
+			}
+
+			// beginShape();
+			// fill(0,0,0/rows*100+155);
+			
+			// vertex(plane[rows-1][cols-1][0], plane[rows-1][cols-1][1], plane[rows-1][cols-1][2]);
+			// vertex(plane[0][cols-1][0], plane[0][cols-1][1], plane[0][cols-1][2]);
+			// vertex(plane[0][0][0], plane[0][0][1], plane[0][0][2]);
+
+			// vertex(plane[rows-1][cols-1][0], plane[rows-1][cols-1][1], plane[rows-1][cols-1][2]);
+			// vertex(plane[rows-1][0][0], plane[rows-1][0][1], plane[rows-1][0][2]);
+			// vertex(plane[0][0][0], plane[0][0][1], plane[0][0][2]);
+			
+			// endShape();
+		}
+
+	</script>
+</body>
+
+</html>
