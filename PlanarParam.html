@@ -11,11 +11,14 @@
 		}
 	</style>
 </head>
+
+
+
 <body>
 	<script>
-		let rows = 50;
-		let cols = 50;
-		let scl = 100;
+		let rows = 200;
+		let cols = 200;
+		let scl = 250;
 		let w = 1200;
 		let h = 600;
 
@@ -24,8 +27,8 @@
 		let initialPlane = [];
 		let finalShape = [];
 
-		let lerpVal = 0;
-		let lerpDir = 1;
+		let lerpVal = 1;
+		let lerpDir = 0;
 
 		let count = 0;
 		let countMax = 50;
@@ -41,37 +44,56 @@
 				finalShape[i] = [];
 				initialPlane[i] = [];
 				for (let j = 0; j < cols; j++) {
-					let u = map(i/rows,0,1-1/rows,0,2*Math.PI)-Math.PI/2;
-					let v = map(j/cols,0,1-1/cols,0,2*Math.PI)+Math.PI;
-					finalShape[i][j] = [scl*x(u, v), scl*y(u, v), scl*z(u, v)];
-					initialPlane[i][j] = [-10*i+rows/2*10,scl*0,10*j-cols/2*10];
+					//let u = map(i/rows,0,1-1/rows,0,2*Math.PI)-Math.PI/2;
+					//let v = map(j/cols,0,1-1/cols,0,2*Math.PI)+Math.PI;
+					let u = map(i/rows,0,1-1/rows,0,1);
+					let v = map(j/cols,0,1-1/cols,0,15*Math.PI);
+					finalShape[i][j] = rose(u,v).mult(scl);
+					initialPlane[i][j] = createVector(-10*i+rows/2*10,scl*0,10*j-cols/2*10);
 				}
 			}
 		}
 
-		function x(u, v) {
-			return (cos(v)+2)*cos(u);
+		function donut(u, v) {
+			return createVector((cos(v)+2)*cos(u),
+					(cos(v)+2)*sin(u),
+					sin(v));//-u/2;
 		}
 
-		function y(u, v) {
-			return (cos(v)+2)*sin(u);
+		// Rose[x_, theta_] := Module[
+		// 	{phi = (Pi/2)Exp[-theta/(8 Pi)], 
+		//	X = 1 - (1/2) ( (5/4) (1 - Mod[3.6 theta, 2 Pi]/Pi)^2 - 1/4)^2}, 
+		// 	y = 1.95653 x^2 (1.27689 x - 1)^2 Sin[phi];
+		// 	r = X(x Sin[phi] + y Cos[phi]); 
+		// 	{r Sin[theta], r Cos[theta], X(x Cos[phi] - y Sin[phi]), EdgeForm[]}
+		// ];
+		// ParametricPlot3D[Rose[x, theta], {x, 0, 1}, {theta, -2 Pi, 15 Pi}, PlotPoints -> {25, 576}, LightSources -> {{{0, 0, 1}, RGBColor[1, 0, 0]}}, Compiled -> False]
+
+
+		function XFunc(theta) {
+			return 1 - (.5)*Math.pow( (5/4) * Math.pow(1 - 3.6 * theta%(2*Math.PI)/Math.PI,2) - 1/4,2);
 		}
 
-		function z(u, v) {
-			return sin(v)//-u/2;
-		}
+		function rose(x, theta) {
+			let phi = 15*exp(2*Math.PI/180*theta/1500);
+			let petalCut = 1;// - (1/2) * pow(1-((3.6*theta%(2*Math.PI))/Math.PI),4);
+			let r = 2*pow(x,2)*pow(1.3*x-1,2)*sin(phi);
 
+			let pX = petalCut * r * sin(phi) * sin(theta);
+			let pY = petalCut * -1 * (r * cos(phi) + r);
+			let pZ = petalCut* r * sin(phi) * cos(theta);
+
+			return createVector(pX, pY, pZ)
+		}
 
 		function draw() {
 			for (let i = 0; i < rows; i++) {
 				plane[i] = [];
 				for (let j = 0; j < cols; j++) {
-					plane[i][j] = p5.Vector.lerp(createVector(initialPlane[i][j][0], initialPlane[i][j][1], initialPlane[i][j][2]), createVector(finalShape[i][j][0], finalShape[i][j][1], finalShape[i][j][2]), lerpVal)
+					plane[i][j] = p5.Vector.lerp(initialPlane[i][j], finalShape[i][j], lerpVal)
 				}
 			}
 			
-			console.log(lerpVal);
-
 			if (lerpVal > 1 || lerpVal < 0) {
 				count += 1;
 				if (count > countMax) {
