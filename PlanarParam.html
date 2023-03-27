@@ -11,10 +11,9 @@
 		}
 	</style>
 </head>
-
 <body>
 	<script>
-		let rows = 500;
+		let rows = 50;
 		let cols = 50;
 		let scl = 100;
 		let w = 1200;
@@ -42,7 +41,7 @@
 				finalShape[i] = [];
 				initialPlane[i] = [];
 				for (let j = 0; j < cols; j++) {
-					let u = map(i/rows,0,1-1/rows,0,2*Math.PI*10)-Math.PI/2;
+					let u = map(i/rows,0,1-1/rows,0,2*Math.PI)-Math.PI/2;
 					let v = map(j/cols,0,1-1/cols,0,2*Math.PI)+Math.PI;
 					finalShape[i][j] = [scl*x(u, v), scl*y(u, v), scl*z(u, v)];
 					initialPlane[i][j] = [-10*i+rows/2*10,scl*0,10*j-cols/2*10];
@@ -59,7 +58,7 @@
 		}
 
 		function z(u, v) {
-			return sin(v)-u/2;
+			return sin(v)//-u/2;
 		}
 
 
@@ -109,7 +108,7 @@
 
 					beginShape();
 
-					fill(map(noise(i/rows*3), 0, 1, 0, 100), map(noise(j/cols*3), 0, 1, 0, 100),0)
+					//fill(map(noise(i/rows*3), 0, 1, 0, 100), map(noise(j/cols*3), 0, 1, 0, 100),0)
 
 					vertex(plane[i][j].x, plane[i][j].y, plane[i][j].z);
 					vertex(plane[i][j+1].x, plane[i][j+1].y, plane[i][j+1].z);
