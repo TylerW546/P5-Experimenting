@@ -16,8 +16,8 @@
 
 <body>
 	<script>
-		let rows = 200;
-		let cols = 200;
+		let rows = 50;
+		let cols = 50;
 		let scl = 250;
 		let w = 1200;
 		let h = 600;
@@ -39,6 +39,7 @@
 
 		function setup() {
 			createCanvas(w, h, WEBGL);
+			angleMode(DEGREES);
 
 			for (let i = 0; i < rows; i++) {
 				finalShape[i] = [];
@@ -47,8 +48,8 @@
 					//let u = map(i/rows,0,1-1/rows,0,2*Math.PI)-Math.PI/2;
 					//let v = map(j/cols,0,1-1/cols,0,2*Math.PI)+Math.PI;
 					let u = map(i/rows,0,1-1/rows,0,1);
-					let v = map(j/cols,0,1-1/cols,0,15*Math.PI);
-					finalShape[i][j] = rose(u,v).mult(scl);
+					let v = map(j/cols,0,1-1/cols,0,15*180);
+					finalShape[i][j] = rose(u,v)[0].mult(scl);
 					initialPlane[i][j] = createVector(-10*i+rows/2*10,scl*0,10*j-cols/2*10);
 				}
 			}
@@ -69,21 +70,16 @@
 		// ];
 		// ParametricPlot3D[Rose[x, theta], {x, 0, 1}, {theta, -2 Pi, 15 Pi}, PlotPoints -> {25, 576}, LightSources -> {{{0, 0, 1}, RGBColor[1, 0, 0]}}, Compiled -> False]
 
-
-		function XFunc(theta) {
-			return 1 - (.5)*Math.pow( (5/4) * Math.pow(1 - 3.6 * theta%(2*Math.PI)/Math.PI,2) - 1/4,2);
-		}
-
 		function rose(x, theta) {
-			let phi = 15*exp(2*Math.PI/180*theta/1500);
-			let petalCut = 1;// - (1/2) * pow(1-((3.6*theta%(2*Math.PI))/Math.PI),4);
-			let r = 2*pow(x,2)*pow(1.3*x-1,2)*sin(phi);
+			let phi = (180/2)*exp(-theta/(8*180));
+			let petalCut = 1 - (.5) * pow(1-((3.6*theta%360)/180),4);
+			let hangDown = 2*pow(x,2)*pow(1.3*x-1,2)*sin(phi);
 
-			let pX = petalCut * r * sin(phi) * sin(theta);
-			let pY = petalCut * -1 * (r * cos(phi) + r);
-			let pZ = petalCut* r * sin(phi) * cos(theta);
+			let pX =  petalCut * x * sin(phi) * sin(theta);
+			let pY = petalCut * (x * cos(phi) - hangDown*sin(phi));
+			let pZ =  petalCut * x * sin(phi) * cos(theta);
 
-			return createVector(pX, pY, pZ)
+			return [createVector(pX, -pY, pZ), [205, -x*50+100, x*50+50]]
 		}
 
 		function draw() {
@@ -118,7 +114,7 @@
 			for (let i = 0; i < rows-1; i++) {
 				
 				for (let j = 0; j < cols-1; j++) {
-					beginShape();
+					beginShape(POINTS);
 					//fill(0,0,i/rows*100+155);
 					fill(map(noise(i/rows*3), 0, 1, 0, 255), map(noise(j/cols*3), 0, 1, 0, 255), 0)
 
@@ -128,7 +124,7 @@
 
 					endShape();
 
-					beginShape();
+					beginShape(POINTS);
 
 					//fill(map(noise(i/rows*3), 0, 1, 0, 100), map(noise(j/cols*3), 0, 1, 0, 100),0)
 
