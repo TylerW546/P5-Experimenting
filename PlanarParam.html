@@ -16,7 +16,7 @@
 
 <body>
 	<script>
-		let rows = 30;
+		let rows = 33;
 		let cols = 480;
 		let scl = 250;
 		let w = 1200;
@@ -42,13 +42,13 @@
 
 		function setup() {
 			createCanvas(w, h, WEBGL);
-			drawMode = POINTS;
+			drawMode = TRIANGLES;
 			angleMode(DEGREES);
 			colorMode(HSB);
 
-			stroke(205,50,100);
-			strokeWeight(4);
-			//noStroke();
+			//stroke(205,50,100);
+			//strokeWeight(4);
+			noStroke();
 			//noFill();
 
 			for (let i = 0; i < rows; i++) {
@@ -107,11 +107,11 @@
 			theta = map(theta, 0, 1, 0, circles*2 * 180);
 			let phi = 15*Math.exp(theta/(circles*4 *50));
 
-			let petalCut = 1-((3.6*theta%360)/180);
+			let petalCut = 1 - (1/2) * pow( 1 - ((3.6*theta%360)/180), 4);
 			let hangDown = 2*pow(r,2)*pow(1.3*r-1,2)*sin(phi);
 
 			let pX = petalCut * r * sin(phi) * sin(theta);
-			let pY = petalCut * r * cos(phi)-hangDown;
+			let pY = petalCut * (r * cos(phi)-hangDown);
 			let pZ = petalCut * r * sin(phi) * cos(theta);
 
 			return [createVector(pX, -pY, pZ), color];
@@ -148,22 +148,22 @@
 					beginShape(drawMode);
 					//fill(0,0,i/rows*100+155);
 					//fill(map(noise(i/rows*3), 0, 1, 0, 255), map(noise(j/cols*3), 0, 1, 0, 255), 0)
-					stroke(colorMap[i][j]);
+					fill(colorMap[i][j]);
 					vertex(plane[i][j].x, plane[i][j].y, plane[i][j].z);
-					//vertex(plane[i+1][j].x, plane[i+1][j].y, plane[i+1][j].z);
-					//vertex(plane[i+1][j+1].x, plane[i+1][j+1].y, plane[i+1][j+1].z);
+					vertex(plane[i+1][j].x, plane[i+1][j].y, plane[i+1][j].z);
+					vertex(plane[i+1][j+1].x, plane[i+1][j+1].y, plane[i+1][j+1].z);
 
 					endShape();
 
-					// beginShape(drawMode);
+					beginShape(drawMode);
 
 					// //fill(map(noise(i/rows*3), 0, 1, 0, 100), map(noise(j/cols*3), 0, 1, 0, 100),0)
 
-					// vertex(plane[i][j].x, plane[i][j].y, plane[i][j].z);
-					// vertex(plane[i][j+1].x, plane[i][j+1].y, plane[i][j+1].z);
-					// vertex(plane[i+1][j+1].x, plane[i+1][j+1].y, plane[i+1][j+1].z);
+					vertex(plane[i][j].x, plane[i][j].y, plane[i][j].z);
+					vertex(plane[i][j+1].x, plane[i][j+1].y, plane[i][j+1].z);
+					vertex(plane[i+1][j+1].x, plane[i+1][j+1].y, plane[i+1][j+1].z);
 
-					// endShape();
+					endShape();
 				}
 			}
 
