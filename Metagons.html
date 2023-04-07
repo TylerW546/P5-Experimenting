@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>Metagons</title>
+	<script src="p5.js"></script>
+	<style>
+		canvas {
+			display: block;
+			margin: 0 auto;
+		}
+	</style>
+</head>
+
+
+
+<body>
+	<script>
+		let rows = 64;
+		let cols = 64;
+		let scalar = 200;
+		let w = 500;
+		let h = 500;
+
+		let points = [];
+
+		let numPoints = 10;
+
+
+		function setup() {
+			createCanvas(w, h);
+			angleMode(DEGREES);
+			colorMode(HSB);
+
+			stroke(205,50,100);
+			strokeWeight(1);
+			//noStroke();
+			//noFill();
+			
+			points[0] = 10*
+			for (let i = 2; i < numPoints; i++) {
+				
+			}
+
+			render();
+
+		}
+
+		function render() {
+			background(200,70,15);
+
+			for (let i = 0; i < rows-1; i++) {
+				for (let j = 0; j < cols-1; j++) {
+					beginShape(LINES);
+					fill(90,50,50);
+
+					vertex(plane[i][j].x, plane[i][j].y, plane[i][j].z);
+					vertex(plane[i][j+1].x, plane[i][j+1].y, plane[i][j+1].z);
+
+					endShape();
+
+					beginShape(LINES);
+					fill(90,50,50);
+
+					vertex(plane[i][j].x, plane[i][j].y, plane[i][j].z);
+					vertex(plane[i+1][j].x, plane[i+1][j].y, plane[i+1][j].z);
+					
+					endShape();
+				}
+			}
+
+			for (let i = 0; i < rows-1; i++) {
+				let j = cols-1;
+				beginShape(LINES);
+				fill(90,50,50);
+
+				vertex(plane[i][j].x, plane[i][j].y, plane[i][j].z);
+				vertex(plane[i+1][j].x, plane[i+1][j].y, plane[i+1][j].z);
+				
+				endShape();
+			}
+
+			for (let j = 0; j < cols-1; j++) {
+				let i = rows-1;
+				beginShape(LINES);
+				fill(90,50,50);
+
+				vertex(plane[i][j].x, plane[i][j].y, plane[i][j].z);
+				vertex(plane[i][j+1].x, plane[i][j+1].y, plane[i][j+1].z);
+
+				endShape();
+			}
+		}
+
+		function draw() {
+			// move and rotate camera
+			orbitControl(4,4);
+			render();
+		}
+
+	</script>
+</body>
+
+</html>
