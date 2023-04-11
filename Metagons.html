@@ -20,9 +20,8 @@
 		let w = 500;
 		let h = 500;
 
-		let points = [];
-		let numPoints = 5;
-		let numShapes = 25;
+		let shapes = [];
+		let numShapes = 50;
 
 
 		function setup() {
@@ -30,28 +29,39 @@
 			angleMode(DEGREES);
 			colorMode(HSB);
 
-			stroke(205,50,100);
-			strokeWeight(2);
+			
 			//noStroke();
 			//noFill();
 
-			
+			noLoop();
 
-			points[0] = createVector(0, 0);
-			points[1] = createVector(points[0].x+cos(60), points[0].y+sin(60));
-			points[2] = createVector(points[1].x+cos(-60), points[1].y+sin(-60));
+			let a = 60;
 
-			let a = -60;
-
-			for (let sides = 4; sides < numShapes+3; sides++) {
+			for (let sides = 3; sides < numShapes+2; sides++) {
+				shapes.push([]);
+				
 				for (let vert = 0; vert < sides-2; vert++) {
+					var lastPoint;
+					if (vert > 0) {
+						lastPoint = shapes[shapes.length-1][shapes[shapes.length-1].length-1];
+					} else {
+						if (shapes.length == 1) {
+							shapes[0][0] = createVector(0,0);
+							lastPoint = shapes[0][0];
+						} else {
+							lastPoint = shapes[shapes.length-2][shapes[shapes.length-2].length-1];
+						}
+					}
+					shapes[shapes.length-1].push(createVector(lastPoint.x+cos(a), lastPoint.y+sin(a)));
+					
 					a -= 360/sides;
-					points[points.length] = createVector(points[points.length-1].x+cos(a), points[points.length-1].y+sin(a))
 				}
 			}
 			let centerVec = createVector(w/2, h/2);
-			for (let i = 0; i< points.length; i++) {
-				points[i] = points[i].mult(scalar).add(centerVec);
+			for (let i = 0; i < shapes.length; i++) {
+				for (let j = 0; j < shapes[i].length; j++) {
+					shapes[i][j] = shapes[i][j].mult(scalar).add(centerVec);
+				}
 			}
 
 			render();
@@ -61,22 +71,56 @@
 		function render() {
 			background(200,70,15);
 
-			for (let i = 0; i < points.length-1; i++) {
-				beginShape(LINES);
-				fill(90,50,50);
+			noStroke();
+			for (let i = shapes.length-2; i >= 0 ; i--) {
+				beginShape(TRIANGLE_FAN );
+				fill(random()*255,50,50);
 
-				vertex(points[i].x, h-points[i].y);
-				vertex(points[i+1].x, h-points[i+1].y);
-
-				endShape();
+				for (let j = 0; j < shapes[i].length; j++) {
+					vertex(shapes[i][j].x, h-shapes[i][j].y);
+					
+				}
+				if (i<2){
+					vertex(shapes[i+1][0].x, h-shapes[i+1][0].y);
+				} else {
+					vertex(shapes[i+1][0].x, h-shapes[i+1][0].y);
+					vertex(shapes[i+1][1].x, h-shapes[i+1][1].y);
+				}
+					endShape();
 			}
-		}
 
+			// NO COLORED LINES
+			stroke(0,50,0);
+			strokeWeight(1);
+			for (let i = 0; i < shapes.length-1; i++) {
+				if (i>0) {
+					beginShape(LINES);
+					fill(90,50,50);
+
+					var p1 = shapes[i-1][shapes[i-1].length-1]
+
+					vertex(p1.x, h-p1.y);
+					vertex(shapes[i][0].x, h-shapes[i][0].y);
+
+					endShape();
+				}
+				for (let j = 0; j < shapes[i].length-1; j++) {
+					beginShape(LINES);
+					fill(90,50,50);
+
+					vertex(shapes[i][j].x, h-shapes[i][j].y);
+					vertex(shapes[i][j+1].x, h-shapes[i][j+1].y);
+
+					endShape();
+				}
+			}
+
+			
+		}
 		function draw() {
 			// move and rotate camera
 			render();
 		}
-
 	</script>
 </body>
 
