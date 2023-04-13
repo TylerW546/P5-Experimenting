@@ -161,6 +161,51 @@
 			}
 		}
 
+		class Metagon extends Structure {
+			
+
+			constructor(rows, cols, scl = scalar) {
+				super(rows, cols, scl);
+				
+				this.metagonData = [];
+
+				let a = 60;
+
+				let pointCount = 0;
+				
+				for (let sides = 3; pointCount < this.cols_ ; sides++) {
+					this.metagonData.push([]);
+
+					for (let vert = 0; vert < sides; vert++) {
+						var lastPoint;
+						if (vert > 0) {
+							lastPoint = this.metagonData[this.metagonData.length-1][this.metagonData[this.metagonData.length-1].length-1];
+						} else {
+							if (this.metagonData.length == 1) {
+								this.metagonData[0][0] = createVector(0,0);
+								pointCount++;
+								lastPoint = this.metagonData[0][0];
+							} else {
+								lastPoint = this.metagonData[this.metagonData.length-2][this.metagonData[this.metagonData.length-2].length-3];
+								a+=2*360/(sides-1)
+							}
+						}
+						this.metagonData[this.metagonData.length-1].push(createVector(lastPoint.x+cos(a), lastPoint.y+sin(a)));
+						pointCount++;
+
+						a -= 360/sides;
+					}
+				}
+			}
+			
+			DefineCoordinates(u, v) {
+				u = floor(map(u, 0, 1, 0, this.rows_));
+				shape = sqrt(2*u-1.75)-1.5;
+				
+				return [createVector(metagonData[shape][u-shape],v,0), [200,200,200]];
+			}
+		}
+
 		class Collection {
 			constructor(structs) {
 				// for (let i = 0; i < structs.length-1; i++) {
@@ -254,8 +299,11 @@
 			rose = new Rose(rows, cols);
 			rose.SetFocused();
 
-			collection = new Collection([struct, donut, spiral, rose]);
-			collection.FillShapeForLerp(1);
+			meta = new Metagon(3, 20);
+			meta.SetFocused();
+
+			//collection = new Collection([struct, donut, spiral, rose]);
+			//collection.FillShapeForLerp(1);
 
 			//stroke(205,50,100);
 			//strokeWeight(4);
@@ -290,9 +338,9 @@
 			// move and rotate camera
 			orbitControl(4,4);
 			
-			//Structure.focused.Draw();
-			collection.FillShapeForLerp(lerpStep);
-			collection.Draw();
+			Structure.focused.Draw();
+			// collection.FillShapeForLerp(lerpStep);
+			// collection.Draw();
 			
 		}
 
