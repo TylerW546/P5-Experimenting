@@ -16,40 +16,47 @@
 
 <body>
 	<script>
-		let scalar = 50;
+		let scalar = 100;
 		let w = 1000;
 		let h = 1000;
 
 		let shapes = [];
-		let numShapes = 40;
+		let numShapes = 20;
+
+		let colorOff = 0;
 
 
 		function setup() {
 			createCanvas(w, h);
 			angleMode(DEGREES);
-			colorMode(HSB);
+			colorMode(HSB, 360);
 
 			
 			//noStroke();
 			//noFill();
 
-			noLoop();
+			//noLoop();
 
-			let a = 180;
+			let a = 60;
 
-			shapes.push([createVector(0,0)])
-
-			for (let sides = 3; sides < numShapes+3; sides++) {
+			for (let sides = 3; sides < numShapes+4; sides++) {
 				shapes.push([]);
-				
-				for (let vert = 0; vert < sides-2; vert++) {
+
+				for (let vert = 0; vert < sides; vert++) {
 					var lastPoint;
 					if (vert > 0) {
 						lastPoint = shapes[shapes.length-1][shapes[shapes.length-1].length-1];
 					} else {
-						lastPoint = shapes[shapes.length-2][shapes[shapes.length-2].length-1];
+						if (shapes.length == 1) {
+							shapes[0][0] = createVector(0,0);
+							lastPoint = shapes[0][0];
+						} else {
+							lastPoint = shapes[shapes.length-2][shapes[shapes.length-2].length-3];
+							a+=2*360/(sides-1)
+						}
 					}
 					shapes[shapes.length-1].push(createVector(lastPoint.x+cos(a), lastPoint.y+sin(a)));
+
 					a -= 360/sides;
 				}
 			}
@@ -69,23 +76,24 @@
 			background(200,70,15);
 
 			noStroke();
-			for (let i = shapes.length-1; i >= 1 ; i--) {
-				beginShape(TRIANGLE_FAN );
-				fill(random()*255,50,50);
+			for (let i = numShapes-1; i >= 0 ; i--) {
+				beginShape(TRIANGLE_FAN);
+				fill((-i/numShapes*150+360+colorOff)%360,255,255);
 				
-				if (i>=1) {
-					vertex(shapes[i-1][shapes[i-1].length-1].x, h-shapes[i-1][shapes[i-1].length-1].y);
-				}
+				
 				for (let j = 0; j < shapes[i].length; j++) {
 					vertex(shapes[i][j].x, h-shapes[i][j].y);
 				}
+				
 				endShape();
 			}
 
+			colorOff += 1;
+
 			// NO COLORED LINES
 			stroke(0,50,0);
-			strokeWeight(1);
-			for (let i = 1; i < shapes.length; i++) {
+			strokeWeight(0);
+			for (let i = 0; i < numShapes; i++) {
 				if (i>0) {
 					beginShape(LINES);
 					fill(90,50,50);
