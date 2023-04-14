@@ -44,15 +44,17 @@
 		class Structure {
 			static focused;
 			
-			constructor(rows, cols, scl = scalar) {
+			constructor(rows, cols, scl = scalar, auto=true) {
 				this.rows_ = rows;
 				this.cols_ = cols;
 				this.scl_ = scl;
 
 				this.shape_ = [];
-				this.colorMap_ = []
+				this.colorMap_ = [];
 
-				this.CreateShape();
+				if (auto) {
+					this.CreateShape();
+				}
 			}
 
 			DefineCoordinates(u, v) {
@@ -162,10 +164,8 @@
 		}
 
 		class Metagon extends Structure {
-			
-
 			constructor(rows, cols, scl = scalar) {
-				super(rows, cols, scl);
+				super(rows, cols, scl, false);
 				
 				this.metagonData = [];
 
@@ -173,7 +173,7 @@
 
 				let pointCount = 0;
 				
-				for (let sides = 3; pointCount < this.cols_ ; sides++) {
+				for (let sides = 3; pointCount < this.cols_+20 ; sides++) {
 					this.metagonData.push([]);
 
 					for (let vert = 0; vert < sides; vert++) {
@@ -196,13 +196,29 @@
 						a -= 360/sides;
 					}
 				}
+				this.CreateShape();
 			}
 			
 			DefineCoordinates(u, v) {
-				u = floor(map(u, 0, 1, 0, this.rows_));
-				shape = sqrt(2*u-1.75)-1.5;
+				v = floor(map(v, 0, 1, 0, this.cols_));
+				//console.log(u,v);
 				
-				return [createVector(metagonData[shape][u-shape],v,0), [200,200,200]];
+				var shape;
+				var extra;
+
+				color = [(-shape/5*150+360+120)%360,255,255]
+				
+				if (v < 2) {
+					shape = 0;
+					extra = floor(v);
+				} else {
+					shape = sqrt(2*v-1.75)-.5;
+					extra = floor(v-(floor(shape)*floor(shape)+floor(shape)+2)/2);
+				} 
+
+				console.log(floor(shape), extra);
+				
+				return [createVector(this.metagonData[floor(shape)][floor(extra)].x*u,v/10,this.metagonData[floor(shape)][floor(extra)].y*u), color];
 			}
 		}
 
@@ -299,15 +315,15 @@
 			rose = new Rose(rows, cols);
 			rose.SetFocused();
 
-			meta = new Metagon(3, 20);
+			meta = new Metagon(2, 20);
 			meta.SetFocused();
 
 			//collection = new Collection([struct, donut, spiral, rose]);
 			//collection.FillShapeForLerp(1);
 
-			//stroke(205,50,100);
-			//strokeWeight(4);
-			noStroke();
+			stroke(205,50,100);
+			strokeWeight(1);
+			//noStroke();
 			//noFill();
 			
 		}

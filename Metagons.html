@@ -16,12 +16,12 @@
 
 <body>
 	<script>
-		let scalar = 100;
+		let scalar = 25;
 		let w = 1000;
 		let h = 1000;
 
 		let shapes = [];
-		let numShapes = 20;
+		let numShapes = 50;
 
 		let colorOff = 0;
 
@@ -78,7 +78,7 @@
 			noStroke();
 			for (let i = numShapes-1; i >= 0 ; i--) {
 				beginShape(TRIANGLE_FAN);
-				fill((-i/numShapes*150+360+colorOff)%360,255,255);
+				fill((-i/20*150+360+colorOff)%360,255,255);
 				
 				
 				for (let j = 0; j < shapes[i].length; j++) {
@@ -100,12 +100,9 @@
 
 					var p1 = shapes[i-1][shapes[i-1].length-1]
 
-					vertex(p1.x, h-p1.y);
-					vertex(shapes[i][0].x, h-shapes[i][0].y);
-
 					endShape();
 				}
-				for (let j = 0; j < shapes[i].length-1; j++) {
+				for (let j = 0; j < shapes[i].length-2; j++) {
 					beginShape(LINES);
 					fill(90,50,50);
 
