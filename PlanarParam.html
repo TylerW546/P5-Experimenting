@@ -218,7 +218,7 @@
 
 				console.log(floor(shape), extra);
 				
-				return [createVector(this.metagonData[floor(shape)][floor(extra)].x*u,v/10,this.metagonData[floor(shape)][floor(extra)].y*u), color];
+				return [createVector(this.metagonData[floor(shape)][floor(extra)].x*u,-v/10*(1-u),this.metagonData[floor(shape)][floor(extra)].y*u), color];
 			}
 		}
 
@@ -248,6 +248,10 @@
 			}
 
 			FillShapeForLerp(lerpVal) {
+				if (this.structures_.length == 1) {
+					return;
+				}
+				
 				lerpVal = map(lerpVal, 0, 1, 0, .9999999999);
 
 				let newLerp = lerpVal * (this.structures_.length-1);
@@ -304,22 +308,18 @@
 			colorMode(HSB);
 
 			struct = new Structure(rows, cols);
-			struct.SetFocused();
-
 			donut = new Donut(rows, cols);
-			donut.SetFocused();
-
 			spiral = new Spiral(rows, cols);
-			spiral.SetFocused();
-
 			rose = new Rose(rows, cols);
-			rose.SetFocused();
 
-			meta = new Metagon(2, 20);
+			struct2 = new Structure(2, 40);
+			meta = new Metagon(2, 40);
+			
 			meta.SetFocused();
 
-			//collection = new Collection([struct, donut, spiral, rose]);
-			//collection.FillShapeForLerp(1);
+			collection = new Collection([struct, donut, spiral, rose]);
+			//collection = new Collection([struct2, meta]);
+			collection.FillShapeForLerp(1);
 
 			stroke(205,50,100);
 			strokeWeight(1);
@@ -354,9 +354,9 @@
 			// move and rotate camera
 			orbitControl(4,4);
 			
-			Structure.focused.Draw();
-			// collection.FillShapeForLerp(lerpStep);
-			// collection.Draw();
+			//Structure.focused.Draw();
+			collection.FillShapeForLerp(lerpStep);
+			collection.Draw();
 			
 		}
 
