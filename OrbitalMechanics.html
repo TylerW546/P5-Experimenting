@@ -8,54 +8,177 @@
 	<script type="text/javascript">
 		var timeCount = 0;
 
-        var planet;
-        var sat;
 
         var scaleFactor = 20;
 
         var G = (2*3.1415926)^2;
 
+        var timeScale = 0;
+        var dt=.001;
+
+        var maxLen = 1000;
+
+        var initialCOM;
+        var posCOM;
+
+        var initialVCOM;
+        
         //https://astronomy.stackexchange.com/questions/37217/binary-star-initial-speed
 
+        function setup(){
+			createCanvas(2000, 1000, WEBGL);
+			angleMode(DEGREES);
+            colorMode(HSL, 360)
+
+            // new Satellite(10,0,0,m=1e1,r=35,dx=0,dy=4,dz=0);
+            // new Satellite(0,0,10,m=1e1,r=35,dx=0,dy=-3,dz=0);
+            
+            // new Satellite(-15,0,0,m=1e-1,r=5,dx=0,dy=3,dz=0);
+
+            // new Satellite(0,10,0,m=1,r=15,dx=0,dy=-5.3,dz=0);
+            // new Satellite(0,-10,0,m=1,r=15,dx=0,dy=-5,dz=0);
+
+            new Satellite(10,0,-10,m=1e1,r=15,dx=0,dy=4,dz=0);
+            new Satellite(-10,0,-10,m=1e1,r=15,dx=0,dy=4,dz=0);
+            new Satellite(10,0,10,m=1e1,r=15,dx=0,dy=-4,dz=0);
+            new Satellite(-10,0,10,m=1e1,r=15,dx=0,dy=-4,dz=0);
+            new Satellite(0,0,0,m=1e2,r=45,dx=0,dy=0,dz=0);
+
+            initialCOM = getCOM();
+            initialVCOM = getVCOM();
+		}
+
+        function randomColor() {
+            return color(random(360),100,100);
+        }
+
+        function getCOM() {
+            var sum = createVector(0,0,0);
+            var totalMass = 0;
+            for (var i=0; i<Satellite.allObjects.length; i++) {
+                var mass = Satellite.allObjects[i].mass;
+                sum.add(p5.Vector.mult(Satellite.allObjects[i].pos,mass));
+                totalMass += mass
+            }
+            return sum.mult(1/totalMass);
+        }
+
+        function getVCOM() {
+            var sum = createVector(0,0,0);
+            var totalMass = 0;
+            for (var i=0; i<Satellite.allObjects.length; i++) {
+                var mass = Satellite.allObjects[i].mass;
+                sum.add(p5.Vector.mult(Satellite.allObjects[i].velocity,mass));
+                totalMass += mass
+            }
+            return sum.mult(1/totalMass);
+        }
+
+        function renderSphere(pos,radius=10,fillColor=255,strokeWidth=0,strokeColor=color(255)) {
+            fill(fillColor);
+            noStroke();
+            if (strokeWidth) {
+                stroke(strokeColor)
+            }
+            
+            push(); // enter local coordinate system
+            translate(pos.x*scaleFactor, pos.y*scaleFactor, pos.z*scaleFactor);
+            //sphere(this.radius*scaleFactor);
+            sphere(radius);
+            pop();
+        }
+
         class Satellite {
+            static allObjects = [];
+            
             constructor(x,y,z,m=100,r=10,dx=0,dy=0,dz=0) {
                 this.pos = createVector(x,y,z);
                 this.velocity = createVector(dx,dy,dz);
-                this.aceleration = createVector(0,0,0);
+                this.acceleration = createVector(0,0,0);
 
                 this.mass = m;
                 this.radius = r;
+                this.color = randomColor();
 
                 this.positions = [];
+
+                this.new_velocity = null;
+
+                this.colliding_with = [];
+
+                Satellite.allObjects.push(this);
             }
 
-            move(body) {
-                var acel = G*body.mass/p5.Vector.dist(this.pos,body.pos)**2;
+            calc() {
+                for (var i=0; i<Satellite.allObjects.length; i++) {
+                    var body = Satellite.allObjects[i];
 
-                var bodyPos = p5.Vector.sub(body.pos, this.pos);
+                    if (body != this) {
+                        var dist = p5.Vector.dist(this.pos,body.pos);
+                        if (dist*scaleFactor > this.radius+body.radius) {
+                            var acel = G*body.mass/dist**2;
+                            var bodyPos = p5.Vector.sub(body.pos, this.pos);
+                            bodyPos = p5.Vector.mult(bodyPos.setMag(6.28*acel),dt);
+                            this.acceleration = p5.Vector.add(this.acceleration, bodyPos);
+                        } else {
+                            this.colliding_with.push(body);
+                        }
+                    }
+                }
 
-                bodyPos = bodyPos.setMag(6.28*acel);
+                while(this.colliding_with.length > 0) {
+                    this.elasticCollide(this.colliding_with[0]);
+                    //this.removeCollisionForces(this.colliding_with[0]);
 
-                this.velocity = p5.Vector.add(this.velocity, bodyPos);
-                this.pos = p5.Vector.add(this.pos, this.velocity);
+                    this.colliding_with.shift()
+                }
+            }
 
-                if (timeCount%1==0) {
-                    this.positions.push(this.pos);
+            elasticCollide(body) {
+                var v1 = p5.Vector.mult(this.velocity,this.mass);
+                var v2 = p5.Vector.mult(body.velocity,body.mass);
+                var v3 = p5.Vector.mult(this.velocity,body.mass);
+                var v4 = p5.Vector.mult(body.velocity,body.mass);
+                var totalMass = (this.mass+body.mass);
+                
+                var out = p5.Vector.add(v1,v2);
+                out = p5.Vector.sub(out,v3);
+                out = p5.Vector.add(out,v4);
+                out = p5.Vector.mult(out,1/totalMass);
+                
+                if (!this.new_velocity) {
+                    this.new_velocity = out;
+                } else {
+                    this.new_velocity.add(out);
+                }
+            }
+
+            //removeCollisionForces(body);
+
+            move(i) {
+                if (this.new_velocity) {
+                    this.velocity = this.new_velocity;
+                    this.new_velocity = null;
+                }
+                this.velocity = p5.Vector.add(this.velocity, this.acceleration);
+                
+                this.acceleration = createVector(0,0,0);
+                this.pos = p5.Vector.add(this.pos, p5.Vector.mult(this.velocity,dt));
+
+                if (i%(1/dt)==0) {
+                    if (timeCount%1==0) {
+                        this.positions.unshift(this.pos);
+                        if (this.positions.length > maxLen) {
+                            this.positions.pop();
+                        }
+                    }
                 }
             }
 
             draw() {
-                fill(100,200,0);
-                strokeWeight(1);
-                
-                push(); // enter local coordinate system
-                translate(this.pos.x*scaleFactor, this.pos.y*scaleFactor, this.pos.z*scaleFactor);
-                //sphere(this.radius*scaleFactor);
-                sphere(15);
-                translate(-this.pos.x*scaleFactor, -this.pos.y*scaleFactor, -this.pos.z*scaleFactor);
-                pop();
+                renderSphere(this.pos,this.radius,this.color,0)
 
-                stroke(255);
+                stroke(this.color);
                 strokeWeight(1);
                 noFill();
 
@@ -66,19 +189,8 @@
                 }
                 endShape();
             }
+                
         }
-
-
-		function setup(){
-			createCanvas(2000, 1000, WEBGL);
-			angleMode(DEGREES);
-
-            planet = new Satellite(0,0,0,m=1,r=0.0046524726370988384733,dx=0,dy=0,dz=0);
-            sat = new Satellite(5,0,0,m=3.0027e-6,r=4.26352e-5,dx=0,dy=0,dz=2.80992589242)
-
-            //noLoop();
-
-		}
 
 		function draw() {
 			background(0);
@@ -92,18 +204,37 @@
 
             orbitControl(4,4);
 		
-			//lights();
-			//directionalLight(128, 128, 128, cos(time), sin(time), -1);
+			lights();
+			directionalLight(128, 128, 128, cos(timeCount), sin(timeCount), -1);
 			
 			
-            if (keyIsDown(LEFT_ARROW)) {
-                //planet.move(sat);
-                sat.move(planet);
+            if (!keyIsDown(32)) {
+                for (var i = 0; i <= timeScale/dt; i++) {
+                    for (let j=0; j<Satellite.allObjects.length; j++) {
+                        Satellite.allObjects[j].calc();
+                    }
+                    for (let j=0; j<Satellite.allObjects.length; j++) {
+                        Satellite.allObjects[j].move(i);
+                    }
+                }
             }
-                
-                planet.draw();
-                sat.draw();
-                //sphere(200);
+            for (let j=0; j<Satellite.allObjects.length; j++) {
+                Satellite.allObjects[j].draw();
+            }
+
+            if (keyIsDown(LEFT_ARROW)) {
+                timeScale -= .01;
+            } 
+            if (keyIsDown(RIGHT_ARROW)) {
+                timeScale += .01;
+            }
+
+            timeScale = min(5,max(0,timeScale))
+            
+            posCOM = getCOM();
+            renderSphere(posCOM);
+
+            //console.log(p5.Vector.sub(initialVCOM,getVCOM()).mag());
 
             timeCount++;
 		}
