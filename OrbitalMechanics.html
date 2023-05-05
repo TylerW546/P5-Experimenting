@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Orbits</title>
+</head>
+<body>
+	<script src = "p5.js"></script>
+	<script type="text/javascript">
+		var timeCount = 0;
+
+        var planet;
+        var sat;
+
+        var scaleFactor = 20;
+
+        var G = (2*3.1415926)^2;
+
+        //https://astronomy.stackexchange.com/questions/37217/binary-star-initial-speed
+
+        class Satellite {
+            constructor(x,y,z,m=100,r=10,dx=0,dy=0,dz=0) {
+                this.pos = createVector(x,y,z);
+                this.velocity = createVector(dx,dy,dz);
+                this.aceleration = createVector(0,0,0);
+
+                this.mass = m;
+                this.radius = r;
+
+                this.positions = [];
+            }
+
+            move(body) {
+                var acel = G*body.mass/p5.Vector.dist(this.pos,body.pos)**2;
+
+                var bodyPos = p5.Vector.sub(body.pos, this.pos);
+
+                bodyPos = bodyPos.setMag(6.28*acel);
+
+                this.velocity = p5.Vector.add(this.velocity, bodyPos);
+                this.pos = p5.Vector.add(this.pos, this.velocity);
+
+                if (timeCount%1==0) {
+                    this.positions.push(this.pos);
+                }
+            }
+
+            draw() {
+                fill(100,200,0);
+                strokeWeight(1);
+                
+                push(); // enter local coordinate system
+                translate(this.pos.x*scaleFactor, this.pos.y*scaleFactor, this.pos.z*scaleFactor);
+                //sphere(this.radius*scaleFactor);
+                sphere(15);
+                translate(-this.pos.x*scaleFactor, -this.pos.y*scaleFactor, -this.pos.z*scaleFactor);
+                pop();
+
+                stroke(255);
+                strokeWeight(1);
+                noFill();
+
+                beginShape(LINES);
+                for (var i=0; i < this.positions.length-1; i++) {
+                    vertex(this.positions[i].x*scaleFactor, this.positions[i].y*scaleFactor, this.positions[i].z*scaleFactor);
+                    vertex(this.positions[i+1].x*scaleFactor, this.positions[i+1].y*scaleFactor, this.positions[i+1].z*scaleFactor);
+                }
+                endShape();
+            }
+        }
+
+
+		function setup(){
+			createCanvas(2000, 1000, WEBGL);
+			angleMode(DEGREES);
+
+            planet = new Satellite(0,0,0,m=1,r=0.0046524726370988384733,dx=0,dy=0,dz=0);
+            sat = new Satellite(5,0,0,m=3.0027e-6,r=4.26352e-5,dx=0,dy=0,dz=2.80992589242)
+
+            //noLoop();
+
+		}
+
+		function draw() {
+			background(0);
+			
+			fill(100,0,0);
+
+			stroke(120,0,0);
+			strokeWeight(0.5);
+
+            //noStroke();
+
+            orbitControl(4,4);
+		
+			//lights();
+			//directionalLight(128, 128, 128, cos(time), sin(time), -1);
+			
+			
+            if (keyIsDown(LEFT_ARROW)) {
+                //planet.move(sat);
+                sat.move(planet);
+            }
+                
+                planet.draw();
+                sat.draw();
+                //sphere(200);
+
+            timeCount++;
+		}
+
+
+	</script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
