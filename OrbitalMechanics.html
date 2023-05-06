@@ -205,8 +205,8 @@
                 while(this.colliding_with.length > 0) {
                     var delta = p5.Vector.sub(this.colliding_with[0].pos,this.pos);
                     
-                    // this.elasticCollideForce(this.colliding_with[0], delta);
-                    // this.removeCollisionForces(this.colliding_with[0], delta);
+                    this.elasticCollideForce(this.colliding_with[0], delta);
+                    this.removeCollisionForces(this.colliding_with[0], delta);
 
                     this.colliding_with.shift();
                 }
