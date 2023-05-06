@@ -13,11 +13,11 @@
 
         var G = (2*3.1415926)**2;
 
-        var timeScale = 1;
+        var timeScale = 0;
         var dt=.0001;
         var timeScaleMultiplier = 1;
 
-        var maxLen = 1000;
+        var maxLen = 100;
 
         var initialCOM;
         var posCOM;
@@ -30,7 +30,7 @@
             createCanvas(2000, 1000, WEBGL);
 			angleMode(DEGREES);
             colorMode(HSL, 360);
-            perspective(60, 2, .1, 2000000)
+            perspective(60, 2, .1, 80000)
 
             // new Satellite(10,0,0,m=1e1,r=35,dx=0,dy=4,dz=0);
             // new Satellite(0,0,10,m=1e1,r=35,dx=0,dy=-3,dz=0);
@@ -85,12 +85,26 @@
             // uranus =    new Satellite(19.2, 0,0, m=43.6624e-6, r=earthRadius*3.981, dx=0, dy=0, dz=(2*3.1415926)*0.22819);
             // neptune =   new Satellite(30,   0,0, m=51.5139e-6, r=earthRadius*3.865, dx=0, dy=0, dz=(2*3.1415926)*0.18121);
 
-            // Klemperer Rosette
-            var radius = 50;
-            var v = 0;//35.748806138;
-            for (var a = 0; a<360-180; a+=360/6) {
-                new Satellite(radius*cos(a),0,radius*sin(a),m=2e3,r=80,dx=v*cos(a+90),dy=0,dz=v*sin(a+90));
+            // // Klemperer Rosette
+            // var radius = 50;
+            // var v = 35.748806138;
+            // for (var a = 0; a<360; a+=360/6) {
+            //     new Satellite(radius*cos(a),0,radius*sin(a),m=2e3,r=80,dx=v*cos(a+90),dy=0,dz=v*sin(a+90));
+            // }
+
+            var v = 400-0;
+            new Satellite(0,0,0,m=1e6,r=200,dx=v/100,dy=0,dz=-v/100);
+            
+            var v2 = 150;
+            var c = 90;
+            for (var a = 0; a<360; a+=60) {
+                for (var b = -90+c; b<90; b+=c) {
+                    for (var radial=20;radial<30;radial+=10) {
+                        new Satellite(100+radial*sin(a+10*b/c)*cos(b/2+45),radial*sin(b),100+radial*cos(a+10*b/c)*cos(b/2+45),m=1e-200,r=15,dx=-v+v2*sin(a+90),dy=0,dz=v+v2*cos(a+90));
+                    }
+                }
             }
+            new Satellite(100,0,100,m=1e4,r=90,dx=-v,dy=0,dz=v);
 
             initialCOM = getCOM();
             initialVCOM = getVCOM();
@@ -167,28 +181,32 @@
                 Satellite.allObjects.push(this);
             }
 
-            calc() {
-                for (var i=0; i<Satellite.allObjects.length; i++) {
+            calc(thisIndex) {
+                for (var i=thisIndex+1; i<Satellite.allObjects.length; i++) {
                     var body = Satellite.allObjects[i];
 
-                    if (body != this) {
-                        var dist = p5.Vector.dist(this.pos,body.pos);
-                        if (dist*scaleFactor > this.radius+body.radius) {
-                            var accel = G*body.mass/dist**2;
-                            var delta = p5.Vector.sub(body.pos, this.pos);
-                            delta = delta.setMag(accel);
-                            this.acceleration = p5.Vector.add(this.acceleration, delta);
-                        } else {
-                            this.colliding_with.push(body);
-                        }
+                    var delta = p5.Vector.sub(body.pos, this.pos);
+                    if (delta.mag()*scaleFactor > this.radius+body.radius) {
+                        var masslessAccel = G/delta.mag()**2;
+
+                        var deltaThisToBody = p5.Vector.mult(delta,body.mass*masslessAccel/delta.mag());
+                        var deltaBodyToThis = p5.Vector.mult(delta,-this.mass*masslessAccel/delta.mag());
+                        
+                        this.acceleration = p5.Vector.add(this.acceleration, deltaThisToBody);
+                        body.acceleration = p5.Vector.add(body.acceleration, deltaBodyToThis);
+                    } else {
+                        this.colliding_with.push(body);
+                        body.colliding_with.push(this);
                     }
                 }
+            }
 
+            collisionCalcs() {
                 while(this.colliding_with.length > 0) {
                     var delta = p5.Vector.sub(this.colliding_with[0].pos,this.pos);
                     
-                    //this.elasticCollideForce(this.colliding_with[0], delta);
-                    //this.removeCollisionForces(this.colliding_with[0], delta);
+                    // this.elasticCollideForce(this.colliding_with[0], delta);
+                    // this.removeCollisionForces(this.colliding_with[0], delta);
 
                     this.colliding_with.shift();
                 }
@@ -241,7 +259,7 @@
             }
 
             draw() {
-                renderSphere(this.pos,this.radius,this.color,0);
+                renderSphere(this.pos,this.radius,this.color,1);//,1,color(100,100,100),false);
 
                 stroke(this.color);
                 strokeWeight(1);
@@ -300,7 +318,10 @@
             if (!keyIsDown(32)) {
                 for (var i = 0; i < min(timeScale/dt/60,10000); i++) {
                     for (let j=0; j<Satellite.allObjects.length; j++) {
-                        Satellite.allObjects[j].calc();
+                        Satellite.allObjects[j].calc(j);
+                    }
+                    for (let j=0; j<Satellite.allObjects.length; j++) {
+                        Satellite.allObjects[j].collisionCalcs();
                     }
                     for (let j=0; j<Satellite.allObjects.length; j++) {
                         Satellite.allObjects[j].move(i);
@@ -337,7 +358,7 @@
             posCOM = getCOM();
             renderSphere(posCOM);
 
-            //console.log(p5.Vector.sub(initialVCOM,getVCOM()).mag());
+            //console.log(initialVCOM,p5.Vector.sub(initialVCOM,getVCOM()).mag());
 
             timeCount++;
 		}
