@@ -15,8 +15,9 @@
 
         var timeScale = 0;
         var dt=.001;
+        var timeScaleMultiplier = 1;
 
-        var maxLen = 1000;
+        var maxLen = 500;
 
         var initialCOM;
         var posCOM;
@@ -26,23 +27,24 @@
         //https://astronomy.stackexchange.com/questions/37217/binary-star-initial-speed
 
         function setup(){
-			createCanvas(2000, 1000, WEBGL);
+            createCanvas(2000, 1000, WEBGL);
 			angleMode(DEGREES);
             colorMode(HSL, 360)
 
-            // new Satellite(10,0,0,m=1e1,r=35,dx=0,dy=4,dz=0);
-            // new Satellite(0,0,10,m=1e1,r=35,dx=0,dy=-3,dz=0);
-            
-            // new Satellite(-15,0,0,m=1e-1,r=5,dx=0,dy=3,dz=0);
+            new Satellite(10,0,0,m=1e1,r=35,dx=0,dy=4,dz=0);
+            new Satellite(0,0,10,m=1e1,r=35,dx=0,dy=-3,dz=0);
+            new Satellite(-15,0,0,m=1e-1,r=5,dx=0,dy=3,dz=0);
+            new Satellite(0,10,0,m=1,r=15,dx=0,dy=-5.3,dz=0);
+            new Satellite(0,-10,0,m=1,r=15,dx=0,dy=-5,dz=0);
 
-            // new Satellite(0,10,0,m=1,r=15,dx=0,dy=-5.3,dz=0);
-            // new Satellite(0,-10,0,m=1,r=15,dx=0,dy=-5,dz=0);
+            // new Satellite(10,0,-10,m=1e-10,r=15,dx=0,dy=4,dz=0);
+            // new Satellite(-10,0,-10,m=1e-10,r=15,dx=0,dy=4,dz=0);
+            // new Satellite(10,0,10,m=1e-10,r=15,dx=0,dy=-4,dz=0);
+            // new Satellite(-10,0,10,m=1e-10,r=15,dx=0,dy=-4,dz=0);
+            // new Satellite(0,0,0,m=1e2,r=45,dx=0,dy=0,dz=0);
 
-            new Satellite(10,0,-10,m=1e1,r=15,dx=0,dy=4,dz=0);
-            new Satellite(-10,0,-10,m=1e1,r=15,dx=0,dy=4,dz=0);
-            new Satellite(10,0,10,m=1e1,r=15,dx=0,dy=-4,dz=0);
-            new Satellite(-10,0,10,m=1e1,r=15,dx=0,dy=-4,dz=0);
-            new Satellite(0,0,0,m=1e2,r=45,dx=0,dy=0,dz=0);
+            // new Satellite(-80,0,0,m=1e-8,r=40,dx=0,dy=0,dz=0);
+            // new Satellite(80,56.5685424949,0,m=1e-20,r=40,dx=-3,dy=0,dz=0);
 
             initialCOM = getCOM();
             initialVCOM = getVCOM();
@@ -72,6 +74,13 @@
                 totalMass += mass
             }
             return sum.mult(1/totalMass);
+        }
+
+        function decomposeXToY(x,y) {
+            var proj = p5.Vector.mult(y, x.dot(y)/y.mag()**2);
+            var orth = p5.Vector.sub(x,proj);
+
+            return [proj, orth];
         }
 
         function renderSphere(pos,radius=10,fillColor=255,strokeWidth=0,strokeColor=color(255)) {
@@ -116,7 +125,7 @@
                     if (body != this) {
                         var dist = p5.Vector.dist(this.pos,body.pos);
                         if (dist*scaleFactor > this.radius+body.radius) {
-                            var acel = G*body.mass/dist**2;
+                            var acel = G*body.mass/dist**2/dt;
                             var bodyPos = p5.Vector.sub(body.pos, this.pos);
                             bodyPos = p5.Vector.mult(bodyPos.setMag(6.28*acel),dt);
                             this.acceleration = p5.Vector.add(this.acceleration, bodyPos);
@@ -127,40 +136,42 @@
                 }
 
                 while(this.colliding_with.length > 0) {
-                    this.elasticCollide(this.colliding_with[0]);
-                    //this.removeCollisionForces(this.colliding_with[0]);
+                    this.elasticCollideForce(this.colliding_with[0]);
+                    this.removeCollisionForces(this.colliding_with[0]);
 
                     this.colliding_with.shift()
                 }
             }
 
-            elasticCollide(body) {
-                var v1 = p5.Vector.mult(this.velocity,this.mass);
-                var v2 = p5.Vector.mult(body.velocity,body.mass);
-                var v3 = p5.Vector.mult(this.velocity,body.mass);
-                var v4 = p5.Vector.mult(body.velocity,body.mass);
+            elasticCollideForce(body) {
+                var x = this.velocity.x*this.mass + body.velocity.x*body.mass - this.velocity.x*body.mass + body.velocity.x*body.mass;
+                var y = this.velocity.y*this.mass + body.velocity.y*body.mass - this.velocity.y*body.mass + body.velocity.y*body.mass;
+                var z = this.velocity.z*this.mass + body.velocity.z*body.mass - this.velocity.z*body.mass + body.velocity.z*body.mass;
                 var totalMass = (this.mass+body.mass);
                 
-                var out = p5.Vector.add(v1,v2);
-                out = p5.Vector.sub(out,v3);
-                out = p5.Vector.add(out,v4);
-                out = p5.Vector.mult(out,1/totalMass);
-                
-                if (!this.new_velocity) {
-                    this.new_velocity = out;
-                } else {
-                    this.new_velocity.add(out);
+                // Delta Momentum / this.mass
+                var accel = createVector(x/totalMass-this.velocity.x,y/totalMass-this.velocity.y,z/totalMass-this.velocity.z);
+                // Delta Momentum / (mass * dt) = accel needed to bounce
+                accel.div(dt);
+
+                var proj = decomposeXToY(accel, p5.Vector.sub(body.pos,this.pos))[0];
+                //proj.mult(-1);
+                //proj.setMag(accel.mag());
+
+                this.acceleration.add(proj);
+            }
+
+            removeCollisionForces(body) {
+                var delta = p5.Vector.sub(body.pos,this.pos);
+
+                var proj, orth = decomposeXToY(this.acceleration, delta);
+                if (delta.dot(proj) > 1) {
+                    this.acceleration = proj;
                 }
             }
 
-            //removeCollisionForces(body);
-
             move(i) {
-                if (this.new_velocity) {
-                    this.velocity = this.new_velocity;
-                    this.new_velocity = null;
-                }
-                this.velocity = p5.Vector.add(this.velocity, this.acceleration);
+                this.velocity = p5.Vector.add(this.velocity, p5.Vector.mult(this.acceleration,dt));
                 
                 this.acceleration = createVector(0,0,0);
                 this.pos = p5.Vector.add(this.pos, p5.Vector.mult(this.velocity,dt));
@@ -209,7 +220,7 @@
 			
 			
             if (!keyIsDown(32)) {
-                for (var i = 0; i <= timeScale/dt; i++) {
+                for (var i = 0; i < timeScale/dt; i++) {
                     for (let j=0; j<Satellite.allObjects.length; j++) {
                         Satellite.allObjects[j].calc();
                     }
@@ -222,11 +233,18 @@
                 Satellite.allObjects[j].draw();
             }
 
+            if (keyIsDown(SHIFT)) {
+                timeScaleMultiplier = .1;
+            } else {
+                timeScaleMultiplier = 1;
+            }
             if (keyIsDown(LEFT_ARROW)) {
-                timeScale -= .01;
+                timeScale -= .01*timeScaleMultiplier;
+                console.log(timeScale);
             } 
             if (keyIsDown(RIGHT_ARROW)) {
-                timeScale += .01;
+                timeScale += .01*timeScaleMultiplier;
+                console.log(timeScale);
             }
 
             timeScale = min(5,max(0,timeScale))
