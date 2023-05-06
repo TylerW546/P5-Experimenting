@@ -11,13 +11,13 @@
 
         var scaleFactor = 20;
 
-        var G = (2*3.1415926)^2;
+        var G = (2*3.1415926)**2;
 
-        var timeScale = 0;
-        var dt=.001;
+        var timeScale = 1;
+        var dt=.0001;
         var timeScaleMultiplier = 1;
 
-        var maxLen = 500;
+        var maxLen = 1000;
 
         var initialCOM;
         var posCOM;
@@ -29,13 +29,14 @@
         function setup(){
             createCanvas(2000, 1000, WEBGL);
 			angleMode(DEGREES);
-            colorMode(HSL, 360)
+            colorMode(HSL, 360);
+            perspective(60, 2, .1, 2000000)
 
-            new Satellite(10,0,0,m=1e1,r=35,dx=0,dy=4,dz=0);
-            new Satellite(0,0,10,m=1e1,r=35,dx=0,dy=-3,dz=0);
-            new Satellite(-15,0,0,m=1e-1,r=5,dx=0,dy=3,dz=0);
-            new Satellite(0,10,0,m=1,r=15,dx=0,dy=-5.3,dz=0);
-            new Satellite(0,-10,0,m=1,r=15,dx=0,dy=-5,dz=0);
+            // new Satellite(10,0,0,m=1e1,r=35,dx=0,dy=4,dz=0);
+            // new Satellite(0,0,10,m=1e1,r=35,dx=0,dy=-3,dz=0);
+            // new Satellite(-15,0,0,m=1e-1,r=5,dx=0,dy=3,dz=0);
+            // new Satellite(0,10,0,m=1,r=15,dx=0,dy=-5.3,dz=0);
+            // new Satellite(0,-10,0,m=1,r=15,dx=0,dy=-5,dz=0);
 
             // new Satellite(10,0,-10,m=1e-10,r=15,dx=0,dy=4,dz=0);
             // new Satellite(-10,0,-10,m=1e-10,r=15,dx=0,dy=4,dz=0);
@@ -43,8 +44,53 @@
             // new Satellite(-10,0,10,m=1e-10,r=15,dx=0,dy=-4,dz=0);
             // new Satellite(0,0,0,m=1e2,r=45,dx=0,dy=0,dz=0);
 
-            // new Satellite(-80,0,0,m=1e-8,r=40,dx=0,dy=0,dz=0);
-            // new Satellite(80,56.5685424949,0,m=1e-20,r=40,dx=-3,dy=0,dz=0);
+            // new Satellite(10,0,-10,m=1e-10,r=15,dx=1,dy=2,dz=0);
+            // new Satellite(-10,0,-10,m=1e-10,r=15,dx=0,dy=2,dz=0);
+            // new Satellite(10,0,10,m=1e-10,r=15,dx=0,dy=-2,dz=0);
+            // new Satellite(-10,0,10,m=1e-10,r=15,dx=-1,dy=-2,dz=0);
+            // new Satellite(100,0,0,m=1e-2,r=45,dx=0,dy=-5,dz=0);
+            // new Satellite(0,0,0,m=1e2,r=45,dx=0,dy=0,dz=0);
+
+            // new Satellite(-80,0,0,m=1e-8,r=40,dx=3,dy=0,dz=0);
+            // new Satellite(80,56.5685424949,0,m=1e-20,r=40,dx=1,dy=0,dz=0);
+
+            // //Radial 50 and v5 is cool
+            // new Satellite(0,0,0,m=1e2,r=45,dx=0,dy=0,dz=0);
+            // var v = 5;
+            // var radial=50;
+            // for (var a = 0; a<360; a+=60) {
+            //     for (var h=-20;h<=20;h+=10) {
+            //         new Satellite(radial*sin(a+map(h,-20,20,0,30)),h,radial*cos(a+map(h,-20,20,0,30)),m=1e-10,r=15,dx=v*sin(a+90),dy=0,dz=v*cos(a+90));
+            //     }
+            // }
+
+            // new Satellite(0,0,0,m=1e2,r=45,dx=0,dy=0,dz=0);
+            // var v = 5;
+            // var radial=50;
+            // for (var a = 0; a<360; a+=60) {
+            //     for (var h=-20;h<=20;h+=10) {
+            //         new Satellite(radial*sin(a),radial*sin(a)+h,radial*cos(a),m=1e-10,r=15,dx=v*sin(a+90),dy=0,dz=v*cos(a+90));
+            //     }
+            // }
+
+            // scaleFactor = 1000;
+            // var earthRadius = 4.26352e-5*scaleFactor*200;    //sun:r=earthRadius*109.2
+            // sun =       new Satellite(0,    0,0, m=1,          r=20, dx=0, dy=0, dz=0);
+            // mercury =   new Satellite(.4,   0,0, m=0.16601e-6, r=earthRadius*.3829, dx=0, dy=0, dz=(2*3.1415926)*1.60738);
+            // venus =     new Satellite(.7,   0,0, m=2.44783e-6, r=earthRadius*.9499, dx=0, dy=0, dz=(2*3.1415926)*1.17450);
+            // earth =     new Satellite(1,    0,0, m=3.00348e-6, r=earthRadius*1.000, dx=0, dy=0, dz=(2*3.1415926)*1.00000);
+            // mars =      new Satellite(1.5,  0,0, m=0.32272e-6, r=earthRadius*.5320, dx=0, dy=0, dz=(2*3.1415926)*0.80872);
+            // jupiter =   new Satellite(5.2,  0,0, m=954.792e-6, r=earthRadius*10.97, dx=0, dy=0, dz=(2*3.1415926)*0.43960);
+            // saturn =    new Satellite(9.6,  0,0, m=285.886e-6, r=earthRadius*9.140, dx=0, dy=0, dz=(2*3.1415926)*0.32550);
+            // uranus =    new Satellite(19.2, 0,0, m=43.6624e-6, r=earthRadius*3.981, dx=0, dy=0, dz=(2*3.1415926)*0.22819);
+            // neptune =   new Satellite(30,   0,0, m=51.5139e-6, r=earthRadius*3.865, dx=0, dy=0, dz=(2*3.1415926)*0.18121);
+
+            // Klemperer Rosette
+            var radius = 50;
+            var v = 0;//35.748806138;
+            for (var a = 0; a<360-180; a+=360/6) {
+                new Satellite(radius*cos(a),0,radius*sin(a),m=2e3,r=80,dx=v*cos(a+90),dy=0,dz=v*sin(a+90));
+            }
 
             initialCOM = getCOM();
             initialVCOM = getVCOM();
@@ -83,8 +129,11 @@
             return [proj, orth];
         }
 
-        function renderSphere(pos,radius=10,fillColor=255,strokeWidth=0,strokeColor=color(255)) {
+        function renderSphere(pos,radius=10,fillColor=255,strokeWidth=0,strokeColor=color(255),filled=true) {
             fill(fillColor);
+            if (!filled) {
+                noFill();
+            }
             noStroke();
             if (strokeWidth) {
                 stroke(strokeColor)
@@ -104,7 +153,7 @@
                 this.pos = createVector(x,y,z);
                 this.velocity = createVector(dx,dy,dz);
                 this.acceleration = createVector(0,0,0);
-
+    
                 this.mass = m;
                 this.radius = r;
                 this.color = randomColor();
@@ -125,10 +174,10 @@
                     if (body != this) {
                         var dist = p5.Vector.dist(this.pos,body.pos);
                         if (dist*scaleFactor > this.radius+body.radius) {
-                            var acel = G*body.mass/dist**2/dt;
-                            var bodyPos = p5.Vector.sub(body.pos, this.pos);
-                            bodyPos = p5.Vector.mult(bodyPos.setMag(6.28*acel),dt);
-                            this.acceleration = p5.Vector.add(this.acceleration, bodyPos);
+                            var accel = G*body.mass/dist**2;
+                            var delta = p5.Vector.sub(body.pos, this.pos);
+                            delta = delta.setMag(accel);
+                            this.acceleration = p5.Vector.add(this.acceleration, delta);
                         } else {
                             this.colliding_with.push(body);
                         }
@@ -136,37 +185,42 @@
                 }
 
                 while(this.colliding_with.length > 0) {
-                    this.elasticCollideForce(this.colliding_with[0]);
-                    this.removeCollisionForces(this.colliding_with[0]);
+                    var delta = p5.Vector.sub(this.colliding_with[0].pos,this.pos);
+                    
+                    //this.elasticCollideForce(this.colliding_with[0], delta);
+                    //this.removeCollisionForces(this.colliding_with[0], delta);
 
-                    this.colliding_with.shift()
+                    this.colliding_with.shift();
                 }
             }
 
-            elasticCollideForce(body) {
-                var x = this.velocity.x*this.mass + body.velocity.x*body.mass - this.velocity.x*body.mass + body.velocity.x*body.mass;
-                var y = this.velocity.y*this.mass + body.velocity.y*body.mass - this.velocity.y*body.mass + body.velocity.y*body.mass;
-                var z = this.velocity.z*this.mass + body.velocity.z*body.mass - this.velocity.z*body.mass + body.velocity.z*body.mass;
-                var totalMass = (this.mass+body.mass);
-                
-                // Delta Momentum / this.mass
-                var accel = createVector(x/totalMass-this.velocity.x,y/totalMass-this.velocity.y,z/totalMass-this.velocity.z);
-                // Delta Momentum / (mass * dt) = accel needed to bounce
-                accel.div(dt);
+            elasticCollideForce(body, delta) {
+                var bodyVel = decomposeXToY(body.velocity, delta)[0]
+                var thisVel = decomposeXToY(this.velocity, delta)[0]
 
-                var proj = decomposeXToY(accel, p5.Vector.sub(body.pos,this.pos))[0];
-                //proj.mult(-1);
-                //proj.setMag(accel.mag());
+                if ((thisVel.dot(delta)>0 && bodyVel.dot(delta)<0) || (thisVel.mag()-bodyVel.mag())*this.velocity.dot(delta)>0) {
+                    var x = this.velocity.x*this.mass + body.velocity.x*body.mass - this.velocity.x*body.mass + body.velocity.x*body.mass;
+                    var y = this.velocity.y*this.mass + body.velocity.y*body.mass - this.velocity.y*body.mass + body.velocity.y*body.mass;
+                    var z = this.velocity.z*this.mass + body.velocity.z*body.mass - this.velocity.z*body.mass + body.velocity.z*body.mass;
+                    var totalMass = (this.mass+body.mass);
+                    
+                    // Delta Momentum / this.mass
+                    var accel = createVector(x/totalMass-this.velocity.x,y/totalMass-this.velocity.y,z/totalMass-this.velocity.z);
+                    // Delta Momentum / (mass * dt) = accel needed to bounce
+                    accel.div(dt);
 
-                this.acceleration.add(proj);
+                    var proj = decomposeXToY(accel, p5.Vector.sub(body.pos,this.pos))[0];
+                    //proj.mult(-1);
+                    //proj.setMag(accel.mag());
+
+                    this.acceleration.add(proj);
+                }
             }
 
-            removeCollisionForces(body) {
-                var delta = p5.Vector.sub(body.pos,this.pos);
-
-                var proj, orth = decomposeXToY(this.acceleration, delta);
-                if (delta.dot(proj) > 1) {
-                    this.acceleration = proj;
+            removeCollisionForces(body, delta) {
+                var decomp = decomposeXToY(this.acceleration, delta);
+                if (delta.dot(decomp[0]) >= 0) {
+                    this.acceleration = decomp[1];
                 }
             }
 
@@ -187,7 +241,7 @@
             }
 
             draw() {
-                renderSphere(this.pos,this.radius,this.color,0)
+                renderSphere(this.pos,this.radius,this.color,0);
 
                 stroke(this.color);
                 strokeWeight(1);
@@ -200,7 +254,31 @@
                 }
                 endShape();
             }
-                
+            
+
+            drawVelocity(color=this.color) {
+                var scaled = p5.Vector.mult(this.velocity,this.radius*(2)/this.velocity.mag());
+
+                stroke(color);
+                strokeWeight(5);
+                noFill();
+                beginShape(LINES);
+                    vertex(this.pos.x*scaleFactor, this.pos.y*scaleFactor, this.pos.z*scaleFactor);
+                    vertex(this.pos.x*scaleFactor+scaled.x, this.pos.y*scaleFactor+scaled.y, this.pos.z*scaleFactor+scaled.z);
+                endShape();
+            }
+
+            drawVect(vect,color=this.color) {
+                var scaled = p5.Vector.mult(vect,this.radius*(2)/vect.mag());
+
+                stroke(color);
+                strokeWeight(5);
+                noFill();
+                beginShape(LINES);
+                    vertex(this.pos.x*scaleFactor, this.pos.y*scaleFactor, this.pos.z*scaleFactor);
+                    vertex(this.pos.x*scaleFactor+scaled.x, this.pos.y*scaleFactor+scaled.y, this.pos.z*scaleFactor+scaled.z);
+                endShape();
+            }
         }
 
 		function draw() {
@@ -216,11 +294,11 @@
             orbitControl(4,4);
 		
 			lights();
-			directionalLight(128, 128, 128, cos(timeCount), sin(timeCount), -1);
+			directionalLight(128, 128, 128, -1, -1, -1);
 			
 			
             if (!keyIsDown(32)) {
-                for (var i = 0; i < timeScale/dt; i++) {
+                for (var i = 0; i < min(timeScale/dt/60,10000); i++) {
                     for (let j=0; j<Satellite.allObjects.length; j++) {
                         Satellite.allObjects[j].calc();
                     }
@@ -228,13 +306,20 @@
                         Satellite.allObjects[j].move(i);
                     }
                 }
-            }
+            } //else {
+            //     for (let j=0; j<Satellite.allObjects.length; j++) {
+            //         Satellite.allObjects[j].drawVelocity();
+            //     }
+            // }
             for (let j=0; j<Satellite.allObjects.length; j++) {
                 Satellite.allObjects[j].draw();
+                //Satellite.allObjects[j].drawVelocity();
             }
 
             if (keyIsDown(SHIFT)) {
                 timeScaleMultiplier = .1;
+            } else if (keyIsDown(CONTROL)) {
+                timeScaleMultiplier = 10;
             } else {
                 timeScaleMultiplier = 1;
             }
@@ -247,7 +332,7 @@
                 console.log(timeScale);
             }
 
-            timeScale = min(5,max(0,timeScale))
+            timeScale = min(100,max(0,timeScale));
             
             posCOM = getCOM();
             renderSphere(posCOM);
