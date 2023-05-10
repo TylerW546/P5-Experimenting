@@ -139,11 +139,15 @@
 				let phi = map(u, 0, 1, 0, 2*180);
 				let theta = map(v, 0, 1, 0, 180);
 
-				let pX = sin(theta+phi)*cos(theta-90);
-				let pY = cos(theta);
-				let pZ = cos(theta+phi)*cos(theta-90);
+				let c = 1;
 
-				let pos = createVector(pX, -pY, pZ);
+				let r2 = .2;
+
+				let pX = cos(c*theta)*cos(theta-90);
+				let pY = cos(theta)+r2*sin(phi);
+				let pZ = sin(c*theta)*cos(theta-90)+r2*sin(theta);
+
+				let pos = createVector(pX, pY, pZ);
 
 				let color = [100,100,50];
 
