@@ -16,8 +16,8 @@
 
 <body>
 	<script>
-		let rows = 10;
-		let cols = 64;
+		let rows = 2;
+		let cols = 128;
 		let scalar = 100;
 		let w = 1000;
 		let h = 1000;
@@ -135,17 +135,14 @@
 		}
 
 		class Loxodrome extends Structure {
-			DefineCoordinates(u, v) {
-				let phi = map(u, 0, 1, 0, 2*180);
-				let theta = map(v, 0, 1, 0, 180);
+			DefineCoordinates(a, u) {
+				u = map(u, 0, 1, 0, 180);
+				let a2 = 3;
+				let v = a2*log((tan(u/2)))*180/3.14152926;
 
-				let c = 1;
-
-				let r2 = .2;
-
-				let pX = cos(c*theta)*cos(theta-90);
-				let pY = cos(theta)+r2*sin(phi);
-				let pZ = sin(c*theta)*cos(theta-90)+r2*sin(theta);
+				let pX = sin(u)*cos(v);
+				let pY = cos(u);
+				let pZ = sin(u)*sin(v);
 
 				let pos = createVector(pX, pY, pZ);
 
@@ -346,9 +343,9 @@
 			stroke(205,50,100);
 			//strokeWeight(1);
 
-			drawMode = POINTS;
-			noStroke();
-			noFill();
+			drawMode = TRIANGLES;
+			//noStroke();
+			//noFill();
 			
 		}
 
