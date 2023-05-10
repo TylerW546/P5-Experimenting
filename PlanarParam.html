@@ -16,7 +16,7 @@
 
 <body>
 	<script>
-		let rows = 32;
+		let rows = 10;
 		let cols = 64;
 		let scalar = 100;
 		let w = 1000;
@@ -131,6 +131,23 @@
 				let color = [100,100,50];
 
 				return [pos, color];
+			}
+		}
+
+		class Loxodrome extends Structure {
+			DefineCoordinates(u, v) {
+				let phi = map(u, 0, 1, 0, 2*180);
+				let theta = map(v, 0, 1, 0, 180);
+
+				let pX = sin(theta+phi)*cos(theta-90);
+				let pY = cos(theta);
+				let pZ = cos(theta+phi)*cos(theta-90);
+
+				let pos = createVector(pX, -pY, pZ);
+
+				let color = [100,100,50];
+
+				return [pos,color];
 			}
 		}
 
@@ -297,13 +314,11 @@
 					}
 				}
 			}
-
-
 		}
 
 		function setup() {
 			createCanvas(w, h, WEBGL);
-			drawMode = TRIANGLES;
+			
 			angleMode(DEGREES);
 			colorMode(HSB);
 
@@ -317,14 +332,19 @@
 			
 			meta.SetFocused();
 
-			collection = new Collection([struct, donut, spiral, rose]);
+			lox = new Loxodrome(rows, cols);
+
+			// collection = new Collection([struct, donut, spiral, rose]);
+			collection = new Collection([lox]);
 			//collection = new Collection([struct2, meta]);
 			collection.FillShapeForLerp(1);
 
 			stroke(205,50,100);
-			strokeWeight(1);
-			//noStroke();
-			//noFill();
+			//strokeWeight(1);
+
+			drawMode = POINTS;
+			noStroke();
+			noFill();
 			
 		}
 

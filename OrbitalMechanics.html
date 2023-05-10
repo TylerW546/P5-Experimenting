@@ -14,7 +14,7 @@
         var G = (2*3.1415926)**2;
 
         var timeScale = 0;
-        var dt=.0001;
+        var dt=.001;
         var timeScaleMultiplier = 1;
 
         var maxLen = 100;
@@ -27,7 +27,7 @@
         //https://astronomy.stackexchange.com/questions/37217/binary-star-initial-speed
 
         function setup(){
-            createCanvas(2000, 1000, WEBGL);
+            createCanvas(1800, 900, WEBGL);
 			angleMode(DEGREES);
             colorMode(HSL, 360);
             perspective(60, 2, .1, 80000)
@@ -92,19 +92,18 @@
             //     new Satellite(radius*cos(a),0,radius*sin(a),m=2e3,r=80,dx=v*cos(a+90),dy=0,dz=v*sin(a+90));
             // }
 
-            var v = 400-0;
-            new Satellite(0,0,0,m=1e6,r=200,dx=v/100,dy=0,dz=-v/100);
-            
-            var v2 = 150;
-            var c = 90;
-            for (var a = 0; a<360; a+=60) {
-                for (var b = -90+c; b<90; b+=c) {
-                    for (var radial=20;radial<30;radial+=10) {
-                        new Satellite(100+radial*sin(a+10*b/c)*cos(b/2+45),radial*sin(b),100+radial*cos(a+10*b/c)*cos(b/2+45),m=1e-200,r=15,dx=-v+v2*sin(a+90),dy=0,dz=v+v2*cos(a+90));
-                    }
-                }
-            }
-            new Satellite(100,0,100,m=1e4,r=90,dx=-v,dy=0,dz=v);
+            // var v = 400-0;
+            // new Satellite(0,0,0,m=1e6,r=200,dx=v/100,dy=0,dz=-v/100);
+            // var v2 = 150;
+            // var c = 90;
+            // for (var a = 0; a<360; a+=60) {
+            //     for (var b = -90+c; b<90; b+=c) {
+            //         for (var radial=20;radial<30;radial+=10) {
+            //             new Satellite(100+radial*sin(a+10*b/c)*cos(b/2+45),radial*sin(b),100+radial*cos(a+10*b/c)*cos(b/2+45),m=1e-200,r=15,dx=-v+v2*sin(a+90),dy=0,dz=v+v2*cos(a+90));
+            //         }
+            //     }
+            // }
+            // new Satellite(100,0,100,m=1e4,r=90,dx=-v,dy=0,dz=v);
 
             initialCOM = getCOM();
             initialVCOM = getVCOM();
@@ -259,7 +258,7 @@
             }
 
             draw() {
-                renderSphere(this.pos,this.radius,this.color,1);//,1,color(100,100,100),false);
+                renderSphere(this.pos,this.radius,this.color,0);//,1,color(100,100,100),false);
 
                 stroke(this.color);
                 strokeWeight(1);
