@@ -3,7 +3,7 @@
 <head>
 	<title>Orbits</title>
 </head>
-<body>
+<other>
 	<script src = "p5.js"></script>
 	<script type="text/javascript">
 		var timeCount = 0;
@@ -85,12 +85,12 @@
             // uranus =    new Satellite(19.2, 0,0, m=43.6624e-6, r=earthRadius*3.981, dx=0, dy=0, dz=(2*3.1415926)*0.22819);
             // neptune =   new Satellite(30,   0,0, m=51.5139e-6, r=earthRadius*3.865, dx=0, dy=0, dz=(2*3.1415926)*0.18121);
 
-            // // Klemperer Rosette
-            // var radius = 50;
-            // var v = 35.748806138;
-            // for (var a = 0; a<360; a+=360/6) {
-            //     new Satellite(radius*cos(a),0,radius*sin(a),m=2e3,r=80,dx=v*cos(a+90),dy=0,dz=v*sin(a+90));
-            // }
+            // Klemperer Rosette
+            var radius = 50;
+            var v = 35.748806138;
+            for (var a = 0; a<360/2; a+=360/6) {
+                new Satellite(radius*cos(a),0,radius*sin(a),m=2e3,r=80,dx=v*cos(a+90),dy=0,dz=v*sin(a+90));
+            }
 
             // var v = 400-0;
             // new Satellite(0,0,0,m=1e6,r=200,dx=v/100,dy=0,dz=-v/100);
@@ -161,6 +161,7 @@
 
         class Satellite {
             static allObjects = [];
+            static removeQueue = [];
             
             constructor(x,y,z,m=100,r=10,dx=0,dy=0,dz=0) {
                 this.pos = createVector(x,y,z);
@@ -182,20 +183,20 @@
 
             calc(thisIndex) {
                 for (var i=thisIndex+1; i<Satellite.allObjects.length; i++) {
-                    var body = Satellite.allObjects[i];
+                    var other = Satellite.allObjects[i];
 
-                    var delta = p5.Vector.sub(body.pos, this.pos);
-                    if (delta.mag()*scaleFactor > this.radius+body.radius) {
+                    var delta = p5.Vector.sub(other.pos, this.pos);
+                    if (delta.mag()*scaleFactor > this.radius+other.radius) {
                         var masslessAccel = G/delta.mag()**2;
 
-                        var deltaThisToBody = p5.Vector.mult(delta,body.mass*masslessAccel/delta.mag());
-                        var deltaBodyToThis = p5.Vector.mult(delta,-this.mass*masslessAccel/delta.mag());
+                        var deltaThisToother = p5.Vector.mult(delta,other.mass*masslessAccel/delta.mag());
+                        var deltaotherToThis = p5.Vector.mult(delta,-this.mass*masslessAccel/delta.mag());
                         
-                        this.acceleration = p5.Vector.add(this.acceleration, deltaThisToBody);
-                        body.acceleration = p5.Vector.add(body.acceleration, deltaBodyToThis);
+                        this.acceleration = p5.Vector.add(this.acceleration, deltaThisToother);
+                        other.acceleration = p5.Vector.add(other.acceleration, deltaotherToThis);
                     } else {
-                        this.colliding_with.push(body);
-                        body.colliding_with.push(this);
+                        this.colliding_with.push(other);
+                        other.colliding_with.push(this);
                     }
                 }
             }
@@ -204,29 +205,43 @@
                 while(this.colliding_with.length > 0) {
                     var delta = p5.Vector.sub(this.colliding_with[0].pos,this.pos);
                     
-                    this.elasticCollideForce(this.colliding_with[0], delta);
-                    this.removeCollisionForces(this.colliding_with[0], delta);
+                    // this.elasticCollideForce(this.colliding_with[0], delta);
+                    // this.removeCollisionForces(this.colliding_with[0], delta);
+
+                    this.combine(this.colliding_with[0]);
+                    Satellite.removeQueue.push(this);
+                    Satellite.removeQueue.push(this.colliding_with[0]);
+                    this.colliding_with[0].colliding_with.splice(this.colliding_with[0].colliding_with.indexOf(this),1);
 
                     this.colliding_with.shift();
                 }
             }
 
-            elasticCollideForce(body, delta) {
-                var bodyVel = decomposeXToY(body.velocity, delta)[0]
+            combine(other) {
+                var pos = p5.Vector.div(p5.Vector.add(p5.Vector.mult(this.pos,this.mass),p5.Vector.mult(other.pos,other.mass)),this.mass+other.mass);
+                var mass = this.mass+other.mass;
+                var radius = this.radius+other.radius;
+                var vel = p5.Vector.div(p5.Vector.add(p5.Vector.mult(this.velocity,this.mass),p5.Vector.mult(other.velocity,other.mass)),this.mass+other.mass);
+
+                new Satellite(pos.x, pos.y, pos.z, mass, radius, vel.x, vel.y, vel.z);
+            }
+
+            elasticCollideForce(other, delta) {
+                var otherVel = decomposeXToY(other.velocity, delta)[0]
                 var thisVel = decomposeXToY(this.velocity, delta)[0]
 
-                if ((thisVel.dot(delta)>0 && bodyVel.dot(delta)<0) || (thisVel.mag()-bodyVel.mag())*this.velocity.dot(delta)>0) {
-                    var x = this.velocity.x*this.mass + body.velocity.x*body.mass - this.velocity.x*body.mass + body.velocity.x*body.mass;
-                    var y = this.velocity.y*this.mass + body.velocity.y*body.mass - this.velocity.y*body.mass + body.velocity.y*body.mass;
-                    var z = this.velocity.z*this.mass + body.velocity.z*body.mass - this.velocity.z*body.mass + body.velocity.z*body.mass;
-                    var totalMass = (this.mass+body.mass);
+                if ((thisVel.dot(delta)>0 && otherVel.dot(delta)<0) || (thisVel.mag()-otherVel.mag())*this.velocity.dot(delta)>0) {
+                    var x = this.velocity.x*this.mass + other.velocity.x*other.mass - this.velocity.x*other.mass + other.velocity.x*other.mass;
+                    var y = this.velocity.y*this.mass + other.velocity.y*other.mass - this.velocity.y*other.mass + other.velocity.y*other.mass;
+                    var z = this.velocity.z*this.mass + other.velocity.z*other.mass - this.velocity.z*other.mass + other.velocity.z*other.mass;
+                    var totalMass = (this.mass+other.mass);
                     
                     // Delta Momentum / this.mass
                     var accel = createVector(x/totalMass-this.velocity.x,y/totalMass-this.velocity.y,z/totalMass-this.velocity.z);
                     // Delta Momentum / (mass * dt) = accel needed to bounce
                     accel.div(dt);
 
-                    var proj = decomposeXToY(accel, p5.Vector.sub(body.pos,this.pos))[0];
+                    var proj = decomposeXToY(accel, p5.Vector.sub(other.pos,this.pos))[0];
                     //proj.mult(-1);
                     //proj.setMag(accel.mag());
 
@@ -234,7 +249,7 @@
                 }
             }
 
-            removeCollisionForces(body, delta) {
+            removeCollisionForces(other, delta) {
                 var decomp = decomposeXToY(this.acceleration, delta);
                 if (delta.dot(decomp[0]) >= 0) {
                     this.acceleration = decomp[1];
@@ -322,9 +337,14 @@
                     for (let j=0; j<Satellite.allObjects.length; j++) {
                         Satellite.allObjects[j].collisionCalcs();
                     }
+                    
+                    for (let j=0; j<Satellite.removeQueue.length; j++) {
+                        Satellite.allObjects.splice(Satellite.allObjects.indexOf(Satellite.removeQueue[j]),1);
+                    }
                     for (let j=0; j<Satellite.allObjects.length; j++) {
                         Satellite.allObjects[j].move(i);
                     }
+
                 }
             } //else {
             //     for (let j=0; j<Satellite.allObjects.length; j++) {
@@ -364,7 +384,7 @@
 
 
 	</script>
-</body>
+</other>
 </html>
 
 
