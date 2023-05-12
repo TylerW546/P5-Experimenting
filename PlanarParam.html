@@ -350,24 +350,24 @@
 			noStroke();
 			//noFill();
 
-			var outString="POINT_LIST = ["
+			var outShape = lox;
 
-			for (let i=0; i<lox.shape_.length; i++) {
+			var outString="POINT_LIST = [\n";
+			for (let i=0; i<outShape.shape_.length; i++) {
 				outString += "[";
-				for (let j=0; j<lox.shape_[i].length;j++) {
-					outString+= "[" + lox.shape_[i][j].x + "," + lox.shape_[i][j].y + "," +lox.shape_[i][j].z + "]"
-					if (j<lox.shape_[i].length-1) {
+				for (let j=0; j<outShape.shape_[i].length;j++) {
+					outString+= "[" + outShape.shape_[i][j].x + "," + outShape.shape_[i][j].y + "," +outShape.shape_[i][j].z + "]"
+					if (j<outShape.shape_[i].length-1) {
 						outString+=",";
 					}
 					
 				}
 				outString += "]";
-				if (i<lox.shape_.length-1) {
+				if (i<outShape.shape_.length-1) {
 					outString+=",";
 				}
 			}
-
-			outString += "];";
+			outString += "\n];";
 
 			var a = document.createElement("a");
 			a.href = window.URL.createObjectURL(new Blob([outString], {type: "text/plain"}));
