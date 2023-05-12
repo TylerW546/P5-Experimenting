@@ -16,8 +16,8 @@
 
 <body>
 	<script>
-		let rows = 2;
-		let cols = 128;
+		let rows = 10;
+		let cols = 128*2;
 		let scalar = 100;
 		let w = 1000;
 		let h = 1000;
@@ -136,13 +136,16 @@
 
 		class Loxodrome extends Structure {
 			DefineCoordinates(a, u) {
+				a = map(a,0,1,0,360);
 				u = map(u, 0, 1, 0, 180);
-				let a2 = 3;
+				let a2 = 5;
 				let v = a2*log((tan(u/2)))*180/3.14152926;
 
-				let pX = sin(u)*cos(v);
-				let pY = cos(u);
-				let pZ = sin(u)*sin(v);
+				let r2=.02;
+
+				let pX = sin(u)*cos(v)+r2*cos(v)*cos(a);
+				let pY = cos(u)+r2*sin(a);
+				let pZ = sin(u)*sin(v)+r2*sin(v)*cos(a);
 
 				let pos = createVector(pX, pY, pZ);
 
@@ -344,8 +347,32 @@
 			//strokeWeight(1);
 
 			drawMode = TRIANGLES;
-			//noStroke();
+			noStroke();
 			//noFill();
+
+			var outString="POINT_LIST = ["
+
+			for (let i=0; i<lox.shape_.length; i++) {
+				outString += "[";
+				for (let j=0; j<lox.shape_[i].length;j++) {
+					outString+= "[" + lox.shape_[i][j].x + "," + lox.shape_[i][j].y + "," +lox.shape_[i][j].z + "]"
+					if (j<lox.shape_[i].length-1) {
+						outString+=",";
+					}
+					
+				}
+				outString += "]";
+				if (i<lox.shape_.length-1) {
+					outString+=",";
+				}
+			}
+
+			outString += "];";
+
+			var a = document.createElement("a");
+			a.href = window.URL.createObjectURL(new Blob([outString], {type: "text/plain"}));
+			a.download = "curveData.txt";
+			a.click()
 			
 		}
 
