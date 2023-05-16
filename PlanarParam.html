@@ -16,8 +16,9 @@
 
 <body>
 	<script>
-		let rows = 10;
-		let cols = 128;
+		let rows = 128;
+		let cols = 16;
+		
 		let scalar = 100;
 		let w = 1000;
 		let h = 1000;
@@ -41,6 +42,64 @@
 		var drawMode;
 		var collection;
 
+		function setup() {
+			createCanvas(w, h, WEBGL);
+			
+			angleMode(DEGREES);
+			colorMode(HSB);
+
+			struct = new Structure(rows, cols);
+			donut = new Donut(rows, cols);
+			spiral = new Spiral(rows, cols);
+			spiralThick = new SpiralThick(rows, cols);
+			rose = new Rose(rows, cols);
+			roseThick = new RoseThick(256, 64);
+
+			struct2 = new Structure(2, 40);
+			meta = new Metagon(2, 40);
+			
+			meta.SetFocused();
+
+			lox = new Loxodrome(rows, cols);
+
+			// collection = new Collection([struct, donut, spiral, rose]);
+			collection = new Collection([roseThick]);
+			//collection = new Collection([struct2, meta]);
+			collection.FillShapeForLerp(1);
+
+			stroke(205,50,100);
+			//strokeWeight(1);
+
+			drawMode = TRIANGLES;
+			noStroke();
+			//noFill();
+
+			var outShape = lox;
+
+			var outString="POINT_LIST = [\n";
+			for (let i=0; i<outShape.shape_.length; i++) {
+				outString += "[";
+				for (let j=0; j<outShape.shape_[i].length;j++) {
+					outString+= "[" + outShape.shape_[i][j].x + "," + outShape.shape_[i][j].y + "," +outShape.shape_[i][j].z + "]"
+					if (j<outShape.shape_[i].length-1) {
+						outString+=",";
+					}
+					
+				}
+				outString += "]";
+				if (i<outShape.shape_.length-1) {
+					outString+=",";
+				}
+			}
+			outString += "\n];";
+
+			// var a = document.createElement("a");
+			// a.href = window.URL.createObjectURL(new Blob([outString], {type: "text/plain"}));
+			// a.download = "curveData.txt";
+			// a.click()
+			
+		}
+
 		class Structure {
 			static focused;
 			
@@ -57,7 +116,7 @@
 				}
 			}
 
-			DefineCoordinates(u, v) {
+			DefineCoordinates(v, u) {
 				let phi = map(u, 0, 1, 0, 1*180);
 				let theta = map(v, 0, 1, 0, 2*180);
 
@@ -118,7 +177,7 @@
 		}
 
 		class Donut extends Structure {
-			DefineCoordinates(v, u) {
+			DefineCoordinates(u, v) {
 				u = map(u, 0, 1, 0, 2*180);
 				v = map(v, 0, 1, 0, 2*180);
 				
@@ -135,7 +194,7 @@
 		}
 
 		class Loxodrome extends Structure {
-			DefineCoordinates(a, u) {
+			DefineCoordinates(u, a) {
 				a = map(a,0,1,0,360);
 				u = map(u, 0, 1, 0, 180);
 				let a2 = 5;
@@ -156,7 +215,7 @@
 		}
 
 		class Rose extends Structure {
-			DefineCoordinates(r, theta) {
+			DefineCoordinates(theta, r) {
 				//phi = map(phi, 0, 1, 0, 2*Math.PI);
 				let color = [0, -r*50+100, r*50+50];
 				
@@ -176,11 +235,64 @@
 			}
 		}
 
+		class RoseThick extends Structure {
+			DefineCoordinates(theta, r) {
+				r = map(r, 0, 1, 0, 2);
+				if (r > 1) {
+					r = -(r-1)+2;
+				}
+
+				var down = 0;
+				if (r >= 1) {
+					down += .1;
+				}
+				
+				let color = [0, -r%1*50+100, r%1*50+50];
+				
+				let circles = 7.5;
+
+				theta = map(theta, 0, 1, 0, circles*2 * 180);
+				let phi = 15*Math.exp(theta/1500);
+
+				let petalCut = 1 - (1/2) * pow((1) * (1 - ((3.6*theta%360)/180)), 4);
+				let hangDown = 1.95653*pow(r%1,2)*pow(1.27689*(r%1)-1,2)*sin(phi);
+
+				let pX = petalCut * (r%1) * sin(phi) * sin(theta);
+				let pY = petalCut * ((r%1) * cos(phi)-hangDown);
+				let pZ = petalCut * (r%1) * sin(phi) * cos(theta);
+
+				return [createVector(pX, -pY+down, pZ), color];
+			}
+		}
+
 		class Spiral extends Structure {
-			DefineCoordinates(u, v) {
+			DefineCoordinates(v, u) {
 				return [createVector(u*sin(map(v, 0, 1, 0, 7.5 * 2 * 180)),
 									10*(v-1),
 									u*cos(map(v, 0, 1, 0, 7.5 * 2 * 180))), [0, -u*50+100, u*50+50]];
+			}
+		}
+
+		class SpiralThick extends Structure {
+			DefineCoordinates(v, u) {
+				u = map(u, 0, 1, 0, 2);
+				if (u > 1) {
+					u = -(u-1)+2;
+				}
+				var newV = map(v, 0, 1, 0, 7.5 * 2 * 180);
+				
+				var down = 0;
+				if (u%1 < .75 && u%1 > .25) {
+					down = .2;
+				}
+				
+				if (u >= 1) {
+					down += .2;
+				}
+
+				return [createVector(.5*sin(newV) + u%1*sin(newV),
+									10*(v-1)+down,
+									.5*cos(newV) + u%1*cos(newV)), [0, -u%1*50+100, u%1*50+50]];
 			}
 		}
 
@@ -220,7 +332,7 @@
 				this.CreateShape();
 			}
 			
-			DefineCoordinates(u, v) {
+			DefineCoordinates(v, u) {
 				v = floor(map(v, 0, 1, 0, this.cols_));
 				//console.log(u,v);
 				
@@ -308,7 +420,7 @@
 
 						
 						beginShape(drawMode);
-						fill(this.colorMap_[i][j][0], this.colorMap_[i][j][1], this.colorMap_[i][j][2]-10);
+						fill(this.colorMap_[i][j][0], this.colorMap_[i][j][1], this.colorMap_[i][j][2]);
 						
 						vertex(this.shape_[i][j].x, this.shape_[i][j].y, this.shape_[i][j].z);
 						vertex(this.shape_[i][j+1].x, this.shape_[i][j+1].y, this.shape_[i][j+1].z);
@@ -319,63 +431,6 @@
 				}
 			}
 		}
-
-		function setup() {
-			createCanvas(w, h, WEBGL);
-			
-			angleMode(DEGREES);
-			colorMode(HSB);
-
-			struct = new Structure(rows, cols);
-			donut = new Donut(rows, cols);
-			spiral = new Spiral(rows, cols);
-			rose = new Rose(rows, cols);
-
-			struct2 = new Structure(2, 40);
-			meta = new Metagon(2, 40);
-			
-			meta.SetFocused();
-
-			lox = new Loxodrome(rows, cols);
-
-			// collection = new Collection([struct, donut, spiral, rose]);
-			collection = new Collection([lox]);
-			//collection = new Collection([struct2, meta]);
-			collection.FillShapeForLerp(1);
-
-			stroke(205,50,100);
-			//strokeWeight(1);
-
-			drawMode = TRIANGLES;
-			noStroke();
-			//noFill();
-
-			var outShape = lox;
-
-			var outString="POINT_LIST = [\n";
-			for (let i=0; i<outShape.shape_.length; i++) {
-				outString += "[";
-				for (let j=0; j<outShape.shape_[i].length;j++) {
-					outString+= "[" + outShape.shape_[i][j].x + "," + outShape.shape_[i][j].y + "," +outShape.shape_[i][j].z + "]"
-					if (j<outShape.shape_[i].length-1) {
-						outString+=",";
-					}
-					
-				}
-				outString += "]";
-				if (i<outShape.shape_.length-1) {
-					outString+=",";
-				}
-			}
-			outString += "\n];";
-
-			var a = document.createElement("a");
-			a.href = window.URL.createObjectURL(new Blob([outString], {type: "text/plain"}));
-			a.download = "curveData.txt";
-			a.click()
-			
-		}
-
 
 		function draw() {
 			// for (let i = 0; i < rows; i++) {
