@@ -93,10 +93,10 @@
 			}
 			outString += "\n];";
 
-			// var a = document.createElement("a");
-			// a.href = window.URL.createObjectURL(new Blob([outString], {type: "text/plain"}));
-			// a.download = "curveData.txt";
-			// a.click()
+			var a = document.createElement("a");
+			a.href = window.URL.createObjectURL(new Blob([outString], {type: "text/plain"}));
+			a.download = "curveData.txt";
+			a.click()
 			
 		}
 
