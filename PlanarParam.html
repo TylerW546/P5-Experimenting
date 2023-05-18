@@ -16,8 +16,8 @@
 
 <body>
 	<script>
-		let rows = 128;
-		let cols = 16;
+		let rows = 64*8;
+		let cols = 8;
 		
 		let scalar = 100;
 		let w = 1000;
@@ -63,7 +63,7 @@
 			lox = new Loxodrome(rows, cols);
 
 			// collection = new Collection([struct, donut, spiral, rose]);
-			collection = new Collection([roseThick]);
+			collection = new Collection([lox]);
 			//collection = new Collection([struct2, meta]);
 			collection.FillShapeForLerp(1);
 
@@ -71,8 +71,8 @@
 			//strokeWeight(1);
 
 			drawMode = TRIANGLES;
-			noStroke();
-			//noFill();
+			//noStroke();
+			noFill();
 
 			var outShape = lox;
 
@@ -196,15 +196,16 @@
 		class Loxodrome extends Structure {
 			DefineCoordinates(u, a) {
 				a = map(a,0,1,0,360);
-				u = map(u, 0, 1, 0, 180);
+				u = map(u, 0, 1, 8, 172);
 				let a2 = 5;
 				let v = a2*log((tan(u/2)))*180/3.14152926;
+				u+=90
 
-				let r2=.02;
+				let r2=.08;
 
-				let pX = sin(u)*cos(v)+r2*cos(v)*cos(a);
-				let pY = cos(u)+r2*sin(a);
-				let pZ = sin(u)*sin(v)+r2*sin(v)*cos(a);
+				let pX = cos(u)*cos(v)	+ r2*cos(v)*cos(a);
+				let pY = sin(u)			+ r2*sin(a);
+				let pZ = cos(u)*sin(v)	+ r2*sin(v)*cos(a);
 
 				let pos = createVector(pX, pY, pZ);
 
@@ -352,6 +353,43 @@
 				console.log(floor(shape), extra);
 				
 				return [createVector(this.metagonData[floor(shape)][floor(extra)].x*u,-v/10*(1-u),this.metagonData[floor(shape)][floor(extra)].y*u), color];
+			}
+		}
+
+		class LoxodromeSpiral extends Structure {
+			constructor(rows, cols, scl = scalar, traceShape) {
+				super(rows, cols, scl, false);
+			
+				this.traceShape_ = traceShape;
+
+				this.CreateShape()
+			}
+
+			DataOnTraceShape(v,u) {
+				var step = .001;
+
+				var du = p5.Vector.sub(traceShape.DefineCoordinates(v,u+step),traceShape.DefineCoordinates(v,u+step))
+				var dv = p5.Vector.sub(traceShape.DefineCoordinates(v+step,u),traceShape.DefineCoordinates(v+step,u))
+
+				du.normalize();
+				dv.normalize();
+
+				var k = 1;
+
+				var sum = p5.Vector.add(dv, p5.Vector.mult(du, k))
+
+
+
+			}
+
+			DefineCoordinates(u, a) {
+				// Treat a as angle around tube, u as length down the tube
+				a = map(a,0,1,0,360);
+
+				
+
+
+
 			}
 		}
 
