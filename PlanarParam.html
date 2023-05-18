@@ -16,12 +16,12 @@
 
 <body>
 	<script>
-		let rows = 64*8;
-		let cols = 8;
+		let rows = 128;
+		let cols = 16;
 		
 		let scalar = 100;
 		let w = 1000;
-		let h = 1000;
+		let h = 500;
 
 		let plane = [];
 
@@ -93,10 +93,10 @@
 			}
 			outString += "\n];";
 
-			// var a = document.createElement("a");
-			// a.href = window.URL.createObjectURL(new Blob([outString], {type: "text/plain"}));
-			// a.download = "curveData.txt";
-			// a.click()
+			var a = document.createElement("a");
+			a.href = window.URL.createObjectURL(new Blob([outString], {type: "text/plain"}));
+			a.download = "curveData.txt";
+			a.click()
 			
 		}
 
