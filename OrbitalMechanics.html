@@ -30,7 +30,7 @@
             createCanvas(1800, 900, WEBGL);
 			angleMode(DEGREES);
             colorMode(HSL, 360);
-            perspective(60, 2, .1, 80000)
+            perspective(60, 2, .1, 8000000)
 
             // new Satellite(10,0,0,m=1e1,r=35,dx=0,dy=4,dz=0);
             // new Satellite(0,0,10,m=1e1,r=35,dx=0,dy=-3,dz=0);
@@ -85,12 +85,12 @@
             // uranus =    new Satellite(19.2, 0,0, m=43.6624e-6, r=earthRadius*3.981, dx=0, dy=0, dz=(2*3.1415926)*0.22819);
             // neptune =   new Satellite(30,   0,0, m=51.5139e-6, r=earthRadius*3.865, dx=0, dy=0, dz=(2*3.1415926)*0.18121);
 
-            // Klemperer Rosette
-            var radius = 50;
-            var v = 35.748806138;
-            for (var a = 0; a<360/2; a+=360/6) {
-                new Satellite(radius*cos(a),0,radius*sin(a),m=2e3,r=80,dx=v*cos(a+90),dy=0,dz=v*sin(a+90));
-            }
+            // // Klemperer Rosette
+            // var radius = 50;
+            // var v = 35.748806138;
+            // for (var a = 0; a<360/2; a+=360/6) {
+            //     new Satellite(radius*cos(a),0,radius*sin(a),m=2e3,r=80,dx=v*cos(a+90),dy=0,dz=v*sin(a+90));
+            // }
 
             // var v = 400-0;
             // new Satellite(0,0,0,m=1e6,r=200,dx=v/100,dy=0,dz=-v/100);
@@ -105,34 +105,48 @@
             // }
             // new Satellite(100,0,100,m=1e4,r=90,dx=-v,dy=0,dz=v);
 
-            initialCOM = getCOM();
-            initialVCOM = getVCOM();
+            // Random Positions
+            var count = 100;
+            for (var i = 0; i< count; i++) {
+                new Satellite(random(-1000,1000),random(-1000,1000),random(-1000,1000),m=random(10,1e5),r=0,dx=random(-5,5),dy=random(-5,5),dz=random(-5,5));
+            }
+
+            initialCOM = getCOM(Satellite.allObjects);
+            initialVCOM = getVCOM(Satellite.allObjects);
 		}
 
         function randomColor() {
             return color(random(360),100,100);
         }
 
-        function getCOM() {
+        function getCOM(list) {
+            if (list.length) {
+                var sum = createVector(0,0,0);
+                var totalMass = 0;
+                for (var i=0; i<list.length; i++) {
+                    var mass = list[i].mass;
+                    sum.add(p5.Vector.mult(list[i].pos,mass));
+                    totalMass += mass;
+                }
+                return sum.mult(1/totalMass);
+            }
+        }
+
+        function getVCOM(list) {
             var sum = createVector(0,0,0);
             var totalMass = 0;
-            for (var i=0; i<Satellite.allObjects.length; i++) {
-                var mass = Satellite.allObjects[i].mass;
-                sum.add(p5.Vector.mult(Satellite.allObjects[i].pos,mass));
-                totalMass += mass
+            for (var i=0; i<list.length; i++) {
+                var mass = list[i].mass;
+                sum.add(p5.Vector.mult(list[i].velocity,mass));
+                totalMass += mass;
             }
             return sum.mult(1/totalMass);
         }
 
-        function getVCOM() {
-            var sum = createVector(0,0,0);
-            var totalMass = 0;
-            for (var i=0; i<Satellite.allObjects.length; i++) {
-                var mass = Satellite.allObjects[i].mass;
-                sum.add(p5.Vector.mult(Satellite.allObjects[i].velocity,mass));
-                totalMass += mass
+        function normalizeView(normPos) {
+            for (var i = 0; i < Satellite.allObjects.length; i++) {
+                Satellite.allObjects[i].pos.sub(normPos);
             }
-            return sum.mult(1/totalMass);
         }
 
         function decomposeXToY(x,y) {
@@ -163,13 +177,18 @@
             static allObjects = [];
             static removeQueue = [];
             
-            constructor(x,y,z,m=100,r=10,dx=0,dy=0,dz=0) {
+            constructor(x,y,z,m=100,r=0,dx=0,dy=0,dz=0) {
                 this.pos = createVector(x,y,z);
                 this.velocity = createVector(dx,dy,dz);
                 this.acceleration = createVector(0,0,0);
     
                 this.mass = m;
                 this.radius = r;
+
+                if (r == 0) {
+                    this.radius = 10*log(m)/log(10);
+                }
+
                 this.color = randomColor();
 
                 this.positions = [];
@@ -179,6 +198,8 @@
                 this.colliding_with = [];
 
                 Satellite.allObjects.push(this);
+
+                
             }
 
             calc(thisIndex) {
@@ -218,10 +239,10 @@
             }
 
             combine(other) {
-                var pos = p5.Vector.div(p5.Vector.add(p5.Vector.mult(this.pos,this.mass),p5.Vector.mult(other.pos,other.mass)),this.mass+other.mass);
+                var pos = getCOM([this, other]);
                 var mass = this.mass+other.mass;
                 var radius = this.radius+other.radius;
-                var vel = p5.Vector.div(p5.Vector.add(p5.Vector.mult(this.velocity,this.mass),p5.Vector.mult(other.velocity,other.mass)),this.mass+other.mass);
+                var vel = getVCOM([this, other]);
 
                 new Satellite(pos.x, pos.y, pos.z, mass, radius, vel.x, vel.y, vel.z);
             }
@@ -341,10 +362,10 @@
                     for (let j=0; j<Satellite.removeQueue.length; j++) {
                         Satellite.allObjects.splice(Satellite.allObjects.indexOf(Satellite.removeQueue[j]),1);
                     }
+                    Satellite.removeQueue = [];
                     for (let j=0; j<Satellite.allObjects.length; j++) {
                         Satellite.allObjects[j].move(i);
                     }
-
                 }
             } //else {
             //     for (let j=0; j<Satellite.allObjects.length; j++) {
@@ -374,10 +395,11 @@
 
             timeScale = min(100,max(0,timeScale));
             
-            posCOM = getCOM();
-            renderSphere(posCOM);
-
-            //console.log(initialVCOM,p5.Vector.sub(initialVCOM,getVCOM()).mag());
+            posCOM = getCOM(Satellite.allObjects);
+            if (posCOM) {
+                renderSphere(posCOM);
+                normalizeView(posCOM);
+            }
 
             timeCount++;
 		}
@@ -386,26 +408,3 @@
 	</script>
 </other>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

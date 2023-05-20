@@ -16,12 +16,12 @@
 
 <body>
 	<script>
-		let rows = 128;
-		let cols = 16;
+		let rows = 64;
+		let cols = 8;
 		
 		let scalar = 100;
-		let w = 1000;
-		let h = 500;
+		let w = 1500;
+		let h = 700;
 
 		let plane = [];
 
@@ -49,38 +49,54 @@
 			colorMode(HSB);
 
 			struct = new Structure(rows, cols);
-			donut = new Donut(rows, cols);
-			spiral = new Spiral(rows, cols);
-			spiralThick = new SpiralThick(rows, cols);
+			cylinder1 = new Cylinder(rows,cols,120);
+			cylinder2 = new Cylinder(rows,cols,240);
+			cylinder3 = new Cylinder(rows,cols,360);
+			sphere = new Sphere(rows, cols);
+			torus = new Torus(rows, cols);
+			
+
+			var spiralTubes = [struct, struct, cylinder1, cylinder2, cylinder3, cylinder3, sphere, sphere, torus, torus];
+			for (var i=1; i<=7;i++) {
+				spiralTubes.push(new SpiralTube(rows,cols,2,i));
+			}
+			spiral = new Spiral(rows, cols, 7);
+			spiralTubes.push(spiral);
+			spiralTubes.push(spiral);
 			rose = new Rose(rows, cols);
+			spiralTubes.push(rose);
+			spiralTubes.push(rose);
+
+			spiralThick = new SpiralThick(rows, cols, 7);
+
 			roseThick = new RoseThick(256, 64);
 
 			struct2 = new Structure(2, 40);
 			meta = new Metagon(2, 40);
-			
-			meta.SetFocused();
 
 			lox = new Loxodrome(rows, cols);
 
-			// collection = new Collection([struct, donut, spiral, rose]);
+			//collection = new Collection([torus, spiral, rose]);
+			// collection = new Collection(spiralTubes);
+			//collection = new Collection([struct, struct, cylinder1, cylinder2, cylinder3, cylinder3, sphere, sphere, torus, torus]);
+			// collection = new Collection([rose]);
+			// collection = new Collection([spiral, spiralThick, spiralThick]);
 			collection = new Collection([lox]);
-			//collection = new Collection([struct2, meta]);
 			collection.FillShapeForLerp(1);
 
 			stroke(205,50,100);
-			//strokeWeight(1);
+			strokeWeight(.5);
 
 			drawMode = TRIANGLES;
 			//noStroke();
-			noFill();
+			//noFill();
 
 			var outShape = lox;
-
 			var outString="POINT_LIST = [\n";
 			for (let i=0; i<outShape.shape_.length; i++) {
 				outString += "[";
 				for (let j=0; j<outShape.shape_[i].length;j++) {
-					outString+= "[" + outShape.shape_[i][j].x + "," + outShape.shape_[i][j].y + "," +outShape.shape_[i][j].z + "]"
+					outString+= "[" + outShape.shape_[i][j].x + "," + outShape.shape_[i][j].y + "," +outShape.shape_[i][j].z + "]";
 					if (j<outShape.shape_[i].length-1) {
 						outString+=",";
 					}
@@ -117,14 +133,11 @@
 			}
 
 			DefineCoordinates(v, u) {
-				let phi = map(u, 0, 1, 0, 1*180);
-				let theta = map(v, 0, 1, 0, 2*180);
+				let pX = 0;
+				let pY = u-.5;
+				let pZ = v-.5;
 
-				let pX = sin(phi) * sin(theta);
-				let pY = cos(phi);
-				let pZ = sin(phi) * cos(theta);
-
-				return [createVector(pX, -pY, pZ), [50, 50, 100-map(phi, 0, 1*180, 0, 100)]];
+				return [createVector(pX, pY, -pZ), [0, 0, 100-map(u, 0, 1, 0, 100)]];
 			}
 
 			CreateShape() {
@@ -176,40 +189,153 @@
 			}
 		}
 
-		class Donut extends Structure {
-			DefineCoordinates(u, v) {
-				u = map(u, 0, 1, 0, 2*180);
-				v = map(v, 0, 1, 0, 2*180);
+		class Cylinder extends Structure {
+			constructor(rows, cols, arc = 2*180, scl = scalar) {
+				super(rows, cols, scl, false);
+
+				this.arc_ = arc;
+
+				this.CreateShape();
+			}
+			
+			DefineCoordinates(v, u) {
+				let theta = map(v, 0, 1, 0, this.arc_);
+
+				let pX = sin(theta);
+				let pY = (u-.5);
+				let pZ = cos(theta);
+
+				return [createVector(pX, pY, pZ), [60, 60, 100-map(u, 0, 1, 0, 100)]];
+			}
+		}
+
+		class Sphere extends Structure {
+			DefineCoordinates(v, u) {
+				let phi = map(u, 0, 1, 0, 180);
+				let theta = map(v, 0, 1, 0, 360);
+
+				let pX = sin(phi) * sin(theta);
+				let pY = cos(phi);
+				let pZ = sin(phi) * cos(theta);
+
+				return [createVector(pX, -pY, pZ), [120, 120, 100-map(u, 0, 1, 0, 100)]];
+			}
+		}
+
+		class Torus extends Structure {
+			constructor(rows, cols, holeSize = 2, scl = scalar) {
+				super(rows, cols, scl, false);
+
+				this.holeSize_ = holeSize;
+
+				this.CreateShape();
+			}
+
+			DefineCoordinates(v, u) {
+				let phi = map(u, 0, 1, 0, 2*180);
+				let theta = map(v, 0, 1, 0, 2*180);
 				
-				let pX = (cos(v)+2)*cos(u);
-				let pY = (cos(v)+2)*sin(u);
-				let pZ = sin(v);
+				let pX = (sin(phi)+this.holeSize_)*sin(theta);
+				let pY = -cos(phi);
+				let pZ = (sin(phi)+this.holeSize_)*cos(theta);
+				
+				let pos = createVector(pX/(1+this.holeSize_), -pY/(1+this.holeSize_), pZ/(1+this.holeSize_));
 
-				let pos = createVector(pY, -pZ, pX);
+				return [pos, [180, 180, 100-map(phi, 0, 2*180, 0, 100)]];
+			}
+		}
+
+		class SpiralTube extends Structure {
+			constructor(rows, cols, holeSize = 2, wraps = 4, scl = scalar) {
+				super(rows, cols, scl, false);
+
+				this.holeSize_ = holeSize;
+				this.wraps_ = wraps;
+
+				this.CreateShape();
+			}
+
+			DefineCoordinates(v, u) {
+				let phi = map(u, 0, 1, 0, 2*180);
+				let theta = map(v, 0, 1, 0, this.wraps_*2*180);
+				
+				let pX = (sin(phi)+this.holeSize_)*sin(theta);
+				let pY = 2.5*this.wraps_*(v-1)-cos(phi);
+				let pZ = (sin(phi)+this.holeSize_)*cos(theta);
+				
+				let pos = createVector(pX/(1+this.holeSize_), pY/(1+this.holeSize_), pZ/(1+this.holeSize_));
 					
-				let color = [100,100,50];
 
-				return [pos, color];
+				return [pos, [180, 180, 100-map(phi, 0, 2*180, 0, 100)]];
+			}
+		}
+
+
+		class Spiral extends Structure {
+			constructor(rows, cols, wraps = 4, scl = scalar) {
+				super(rows, cols, scl, false);
+
+				this.wraps_ = wraps;
+
+				this.CreateShape();
+			}
+
+			DefineCoordinates(v, u) {
+				let phi = map(u, 0, 1, 0, 2*180);
+				let theta = map(v, 0, 1, 0, 7 * 2*180);
+				theta += 180;
+				return [createVector((u-1)*sin(theta),
+									this.wraps_*(v-1),
+									(u-1)*cos(theta)), [90, -u*50+100, 100-map(phi,0,360,0,100)]];
+			}
+		}
+
+		class SpiralThick extends Structure {
+			constructor(rows, cols, wraps = 4, scl = scalar) {
+				super(rows, cols, scl, false);
+
+				this.wraps_ = wraps;
+
+				this.CreateShape();
+			}
+			
+			DefineCoordinates(v, u) {
+				var initialU = u;
+				u = map(u, 0, 1, 0, 2);
+				if (u > 1) {
+					u = -(u-1)+2;
+				}
+				var newV = map(v, 0, 1, 0, 7 * 2 * 180);
+				
+				var down = 0;
+				
+				if (u >= 1) {
+					down += .2;
+				}
+
+				return [createVector(.5*sin(newV) + u%1*sin(newV),
+									this.wraps_*(v-1)+down,
+									.5*cos(newV) + u%1*cos(newV)), [90, -u/2*50+100, 100-map(initialU,0,1,0,100)]];
 			}
 		}
 
 		class Loxodrome extends Structure {
 			DefineCoordinates(u, a) {
 				a = map(a,0,1,0,360);
-				u = map(u, 0, 1, 8, 172);
-				let a2 = 5;
-				let v = a2*log((tan(u/2)))*180/3.14152926;
-				u+=90
+				let latitude = map(u, 0, 1, 8, 172);
+				let a2 = 1;
+				let longitude = a2*log((tan(latitude/2)))*180/3.14152926;
+				latitude+=90
 
 				let r2=.08;
 
-				let pX = cos(u)*cos(v)	+ r2*cos(v)*cos(a);
-				let pY = sin(u)			+ r2*sin(a);
-				let pZ = cos(u)*sin(v)	+ r2*sin(v)*cos(a);
+				let pX = cos(latitude)*cos(longitude)	+ r2*cos(longitude)*cos(a);
+				let pY = sin(latitude)			+ r2*sin(a);
+				let pZ = cos(latitude)*sin(longitude)	+ r2*sin(longitude)*cos(a);
 
 				let pos = createVector(pX, pY, pZ);
 
-				let color = [100,100,50];
+				let color = [0, 100, 100-map((a+270)%360,0,360,0,100)];
 
 				return [pos,color];
 			}
@@ -217,12 +343,12 @@
 
 		class Rose extends Structure {
 			DefineCoordinates(theta, r) {
-				//phi = map(phi, 0, 1, 0, 2*Math.PI);
 				let color = [0, -r*50+100, r*50+50];
 				
 				let circles = 7.5;
 
 				theta = map(theta, 0, 1, 0, circles*2 * 180);
+				theta += 180;
 				let phi = 15*Math.exp(theta/1500);
 
 				let petalCut = 1 - (1/2) * pow((1) * (1 - ((3.6*theta%360)/180)), 4);
@@ -253,6 +379,7 @@
 				let circles = 7.5;
 
 				theta = map(theta, 0, 1, 0, circles*2 * 180);
+				theta += 180;
 				let phi = 15*Math.exp(theta/1500);
 
 				let petalCut = 1 - (1/2) * pow((1) * (1 - ((3.6*theta%360)/180)), 4);
@@ -266,36 +393,6 @@
 			}
 		}
 
-		class Spiral extends Structure {
-			DefineCoordinates(v, u) {
-				return [createVector(u*sin(map(v, 0, 1, 0, 7.5 * 2 * 180)),
-									10*(v-1),
-									u*cos(map(v, 0, 1, 0, 7.5 * 2 * 180))), [0, -u*50+100, u*50+50]];
-			}
-		}
-
-		class SpiralThick extends Structure {
-			DefineCoordinates(v, u) {
-				u = map(u, 0, 1, 0, 2);
-				if (u > 1) {
-					u = -(u-1)+2;
-				}
-				var newV = map(v, 0, 1, 0, 7.5 * 2 * 180);
-				
-				var down = 0;
-				if (u%1 < .75 && u%1 > .25) {
-					down = .2;
-				}
-				
-				if (u >= 1) {
-					down += .2;
-				}
-
-				return [createVector(.5*sin(newV) + u%1*sin(newV),
-									10*(v-1)+down,
-									.5*cos(newV) + u%1*cos(newV)), [0, -u%1*50+100, u%1*50+50]];
-			}
-		}
 
 		class Metagon extends Structure {
 			constructor(rows, cols, scl = scalar) {
@@ -333,7 +430,7 @@
 				this.CreateShape();
 			}
 			
-			DefineCoordinates(v, u) {
+			DefineCoordinates(u, v) {
 				v = floor(map(v, 0, 1, 0, this.cols_));
 				//console.log(u,v);
 				
@@ -348,11 +445,9 @@
 				} else {
 					shape = sqrt(2*v-1.75)-.5;
 					extra = floor(v-(floor(shape)*floor(shape)+floor(shape)+2)/2);
-				} 
-
-				console.log(floor(shape), extra);
+				}
 				
-				return [createVector(this.metagonData[floor(shape)][floor(extra)].x*u,-v/10*(1-u),this.metagonData[floor(shape)][floor(extra)].y*u), color];
+				return [createVector(this.metagonData[floor(shape)][floor(extra)].x*u,v/10*(1-u),this.metagonData[floor(shape)][floor(extra)].y*u), color];
 			}
 		}
 
@@ -377,9 +472,6 @@
 				var k = 1;
 
 				var sum = p5.Vector.add(dv, p5.Vector.mult(du, k))
-
-
-
 			}
 
 			DefineCoordinates(u, a) {
