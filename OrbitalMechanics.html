@@ -11,6 +11,7 @@
         var scaleFactor = 20;
 
         var G = (2*3.1415926)**2;
+        var k = 100000;
 
         var timeScale = 0;
         var dt=.001;
@@ -20,12 +21,19 @@
         var posCOM;
         var initialVCOM;
 
-        var maxLen = 0;
+        var maxLen = 100;
 
         // 0 = None
         // 1 = Elastic
         // 2 = Combine
-        var collisionType = 2;
+        var collisionType = 1;
+
+        var viewObject = 0;
+        var viewObjectCooldown = 0;
+        var viewObjectCoolMax = 10;
+
+        var cam;
+        var prevCam;
         
         //https://astronomy.stackexchange.com/questions/37217/binary-star-initial-speed
 
@@ -36,17 +44,22 @@
             perspective(60, 2, .1, 8000000);
 
             frameRate(60);
+            cam = createCamera();
+            prevCam = createVector();
 
-            // new Satellite(20,0,0,   m=1e1,  r=30,   dx=1,dy=0,dz=0);
-            // new Satellite(0,0,20,   m=1e1,  r=30,   dx=0,dy=0,dz=0);
-            // new Satellite(0,10,20,   m=1e1,  r=30,   dx=0,dy=0,dz=0);
-            // new Satellite(10,0,-20,   m=1e1,  r=30,   dx=0,dy=0,dz=0);
+            // new Satellite(30,0,0,   m=1e5,  r=30,   dx=0,dy=0,dz=0, chrg = -1);
+            // new Satellite(0,0,30,   m=1e5,  r=30,   dx=0,dy=0,dz=0, chrg = -1);
 
-            // new Satellite(10,0,0,   m=1e1,  r=35,   dx=0,dy=4,dz=0);
-            // new Satellite(0,0,10,   m=1e1,  r=35,   dx=0,dy=-3,dz=0);
-            // new Satellite(-15,0,0,  m=1e-1, r=5,    dx=0,dy=3,dz=0);
-            // new Satellite(0,10,0,   m=1,    r=15,   dx=0,dy=-5.3,dz=0);
-            // new Satellite(0,-10,0,  m=1,    r=15,   dx=0,dy=-5,dz=0);
+            // new Satellite(20,0,0,   m=1e1,  r=30,   dx=1,dy=0,dz=0, 1);
+            // new Satellite(0,0,20,   m=1e1,  r=30,   dx=0,dy=0,dz=0, -2);
+            // new Satellite(0,10,20,   m=1e1,  r=30,   dx=0,dy=0,dz=0, 1);
+            // new Satellite(10,0,-20,   m=1e1,  r=30,   dx=0,dy=0,dz=0, -2);
+
+            new Satellite(10,0,0,   m=1e1,  r=35,   dx=0,dy=4,dz=0);
+            new Satellite(0,0,10,   m=1e1,  r=35,   dx=0,dy=-3,dz=0);
+            new Satellite(-15,0,0,  m=1e-1, r=5,    dx=0,dy=3,dz=0);
+            new Satellite(0,10,0,   m=1,    r=15,   dx=0,dy=-5.3,dz=0);
+            new Satellite(0,-10,0,  m=1,    r=15,   dx=0,dy=-5,dz=0);
 
             // new Satellite(10,0,-10,m=1e-10,r=15,dx=0,dy=4,dz=0);
             // new Satellite(-10,0,-10,m=1e-10,r=15,dx=0,dy=4,dz=0);
@@ -64,16 +77,16 @@
             // new Satellite(-80,0,0,m=1e-8,r=40,dx=3,dy=0,dz=0);
             // new Satellite(80,0,0,m=1e-20,r=40,dx=1,dy=0,dz=0);
 
-            //Radial 50 and v5 is cool
-            new Satellite(0,0,0,m=1e2,r=45,dx=0,dy=0,dz=0);
-            var v = 5;
-            var rad=50;
-            for (var a = 0; a<360; a+=60) {
-                for (var h=-20;h<=20;h+=10) {
-                    new Satellite(rad*sin(a+map(h,-20,20,0,30)),h,rad*cos(a+map(h,-20,20,0,30)),
-                                  m=1e-10,r=15,dx=v*sin(a+90),dy=0,dz=v*cos(a+90));
-                }
-            }
+            // //Radial 50 and v5 is cool
+            // new Satellite(0,0,0,m=1e3,r=45,dx=0,dy=0,dz=0);
+            // var v = 5;
+            // var rad=50;
+            // for (var a = 0; a<360; a+=60) {
+            //     for (var h=-20;h<=20;h+=10) {
+            //         new Satellite(rad*sin(a+map(h,-20,20,0,30)),h,rad*cos(a+map(h,-20,20,0,30)),
+            //                       m=1e-10,r=15,dx=v*sin(a+90),dy=0,dz=v*cos(a+90),random(5)-2);
+            //     }
+            // }
 
             // new Satellite(0,0,0,m=1e2,r=45,dx=0,dy=0,dz=0);
             // var v = 5;
@@ -104,17 +117,18 @@
             // }
 
             // var v = 400-0;
-            // new Satellite(0,0,0,m=1e6,r=200,dx=v/100,dy=0,dz=-v/100);
+            // new Satellite(0,0,0,m=1e6,r=200,dx=v/100,dy=0,dz=-v/100, -1);
+            // new Satellite(100,0,100,m=1e4,r=90,dx=-v,dy=0,dz=v,1);
             // var v2 = 150;
             // var c = 90;
             // for (var a = 0; a<360; a+=60) {
             //     for (var b = -90+c; b<90; b+=c) {
             //         for (var radial=20;radial<30;radial+=10) {
-            //             new Satellite(100+radial*sin(a+10*b/c)*cos(b/2+45),radial*sin(b),100+radial*cos(a+10*b/c)*cos(b/2+45),m=1e-200,r=15,dx=-v+v2*sin(a+90),dy=0,dz=v+v2*cos(a+90));
+            //             new Satellite(100+radial*sin(a+10*b/c)*cos(b/2+45),radial*sin(b),100+radial*cos(a+10*b/c)*cos(b/2+45),m=1e-200,r=15,dx=-v+v2*sin(a+90),dy=0,dz=v+v2*cos(a+90),Math.floor(random(3)-1));
             //         }
             //     }
             // }
-            // new Satellite(100,0,100,m=1e4,r=90,dx=-v,dy=0,dz=v);
+            
 
             // // Random Positions
             // var count = 100;
@@ -128,6 +142,7 @@
 
             initialCOM = getCOM(Satellite.allObjects);
             initialVCOM = getVCOM(Satellite.allObjects);
+            viewObject = Satellite.allObjects[0];
 		}
 
         function randomColor() {
@@ -190,10 +205,14 @@
             return sum.div(totalMass);
         }
 
-        function normalizeView(normPos) {
-            for (var i = 0; i < Satellite.allObjects.length; i++) {
-                Satellite.allObjects[i].pos = p5.Vector.sub(Satellite.allObjects[i].pos,normPos);
-            }
+        function normalizeView(cam, normPos) {
+            // for (var i = 0; i < Satellite.allObjects.length; i++) {
+            //     Satellite.allObjects[i].pos = p5.Vector.sub(Satellite.allObjects[i].pos,normPos);
+            // }
+            var newPosition = createVector(cam.eyeX-prevCam.x+scaleFactor*normPos.x, cam.eyeY-prevCam.y+scaleFactor*normPos.y, cam.eyeZ-prevCam.z+scaleFactor*normPos.z)
+            cam.setPosition(newPosition.x, newPosition.y, newPosition.z);
+
+            prevCam = createVector(scaleFactor*normPos.x, scaleFactor*normPos.y, scaleFactor*normPos.z);
         }
 
         function decomposeXToY(x,y) {
@@ -220,17 +239,29 @@
             pop();
         }
 
+        function updateViewObject(allObjects) {
+            var length = allObjects.length;
+            var viewIndex = allObjects.indexOf(viewObject);
+            if (viewObjectCooldown == 0) {
+                viewIndex = (viewIndex + 1) % length;
+                viewObjectCooldown = viewObjectCoolMax;
+            }
+            viewObject = allObjects[viewIndex];
+        }
+
         class Satellite {
             static allObjects = [];
             static removeQueue = [];
             
-            constructor(x,y,z,m=100,r=0,dx=0,dy=0,dz=0, c=null) {
+            constructor(x,y,z,m=100,r=0,dx=0,dy=0,dz=0, chrg=0, c=null) {
                 this.pos = createVector(x,y,z);
                 this.velocity = createVector(dx,dy,dz);
                 this.acceleration = createVector(0,0,0);
     
                 this.mass = m;
                 this.radius = r;
+
+                this.charge = chrg;
 
                 var density = .01;
                 if (r == 0) {
@@ -241,6 +272,14 @@
                     c=randomColor();
                 }
                 this.color = c;
+
+                if (this.charge > 0) {
+                    this.color = color(0,360,180);
+                } else if (this.charge < 0) {
+                    this.color = color(246,360,180);
+                } else {
+                    this.color = color(360,360,360);
+                }
 
                 this.positions = [];
 
@@ -253,18 +292,29 @@
                 this.dead = null;
             }
 
-            calc(thisIndex) {
+            calc(thisIndex, gravity=true, electric=false) {
                 for (var i=thisIndex+1; i<Satellite.allObjects.length; i++) {
                     var other = Satellite.allObjects[i];
 
                     var delta = p5.Vector.sub(other.pos, this.pos);
                     if (delta.mag()*scaleFactor > (this.radius+other.radius)/1) {
-                        var masslessAccel = G/delta.mag()**2;
+                        var deltaThisToOther = createVector();
+                        var deltaOtherToThis = createVector();
+                        if (gravity) {
+                            var masslessAccelG = G/delta.mag()**3;
 
-                        var deltaThisToother = p5.Vector.mult(delta,other.mass*masslessAccel/delta.mag());
-                        var deltaOtherToThis = p5.Vector.mult(delta,-this.mass*masslessAccel/delta.mag());
-                        
-                        this.acceleration = p5.Vector.add(this.acceleration, deltaThisToother);
+                            deltaThisToOther.add(p5.Vector.mult(delta,other.mass*masslessAccelG));
+                            deltaOtherToThis.add(p5.Vector.mult(delta,-this.mass*masslessAccelG));
+                        }
+
+                        if (electric && this.charge*other.charge != 0) {
+                            var masslessAccelE = this.charge*other.charge/Math.abs(this.charge*other.charge)*k/delta.mag()**3;
+                            
+                            deltaThisToOther.add(p5.Vector.mult(delta,-Math.abs(other.charge)*masslessAccelE));
+                            deltaOtherToThis.add(p5.Vector.mult(delta,Math.abs(this.charge)*masslessAccelE));
+                        }
+
+                        this.acceleration = p5.Vector.add(this.acceleration, deltaThisToOther);
                         other.acceleration = p5.Vector.add(other.acceleration, deltaOtherToThis);
                     } else {
                         this.colliding_with.push(other);
@@ -312,14 +362,19 @@
                 var new_mass = this.mass+other.mass;
                 var new_radius = Math.cbrt(pow(this.radius,3)+pow(other.radius,3));
 
+                var new_charge = this.charge + other.charge;
+
                 var new_color = other.color;
                 if (this.mass > other.mass) {
                     new_color = this.color;
                 }
 
                 var sat = new Satellite(new_pos.x, new_pos.y, new_pos.z, new_mass, new_radius, 
-                                        new_vel.x, new_vel.y, new_vel.z, new_color);
+                                        new_vel.x, new_vel.y, new_vel.z, new_charge, new_color);
                 sat.acceleration = new_accel;
+                if (viewObject == this || viewObject == other) {
+                    viewObject = sat;
+                }
 
                 return sat;
             }
@@ -417,7 +472,7 @@
         }
 
 		function draw() {
-			background(0);
+			background(0,360,0);
 			
 			fill(100,0,0);
 
@@ -426,7 +481,6 @@
 
             //noStroke();
 
-            orbitControl(4,4);
 		
 			lights();
 			directionalLight(128, 128, 128, -1, -1, -1);
@@ -435,7 +489,7 @@
             if (!keyIsDown(32)) {
                 for (var i = 0; i < min(timeScale/dt/getFrameRate(),10000); i++) {
                     for (let j=0; j<Satellite.allObjects.length; j++) {
-                        Satellite.allObjects[j].calc(j);
+                        Satellite.allObjects[j].calc(j, true, true);
                     }
                     if (collisionType) {
                         for (let j=0; j<Satellite.allObjects.length; j++) {
@@ -484,13 +538,32 @@
             }
 
             timeScale = min(100,max(0,timeScale));
+
             
             posCOM = getCOM(Satellite.allObjects);
             if (posCOM) {
                 renderSphere(posCOM);
-                normalizeView(posCOM);
+                
             }
+            
+            
+            
+            if (keyIsDown(ENTER)) {
+                updateViewObject(Satellite.allObjects);
+            }
+            if (viewObjectCooldown > 0) {
+                viewObjectCooldown--;
+            }
+
+
             //normalizeView(getMaxMassBody(Satellite.allObjects).pos);
+            //normalizeView(cam, posCOM);
+            normalizeView(cam, viewObject.pos);
+
+            if (mouseIsPressed) {
+                orbitControl();
+            }
+            
 
             //console.log(p5.Vector.sub(initialVCOM, getVCOM(Satellite.allObjects)).mag());
 
