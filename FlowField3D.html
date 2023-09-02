@@ -7,24 +7,34 @@
 <body>
     <script src="p5.js"></script>
     <script type="text/javascript">
-        var num = 500;
-        var noiseScale = 500, noiseStrength = 1;
-        var particles = [num];
-
-        var direction_turnaround_corrections = false;
-        var half_backwards = false;
-        
-        var chosen_colors = [];
-
+        var num = 5000;
 
         var spacial_width = 2000;
         var spacial_height = 2000;
-        var spacial_depth = 2000;
+        var spacial_depth = 5000;
+
+        var noiseScale = 10, noiseStrength = 4;
+        var particles = [num];
+        var extraParticles = [];
+
+        var direction_turnaround_corrections = false;
+        var half_backwards = false;
+        var displayOnFlow = true;
+        
+        var chosen_colors = [];
+
+        var needPause = false;
+        var shiftWasDown = false;
+        
 
         
         function setup() {
             createCanvas(2000, 1000, WEBGL);
+            perspective(PI/3, 2, .2, 800000);
+            noiseSeed(Math.floor(lerp(0, 100000, random())));
+            
             noStroke();
+            
             colorMode(HSL, 360);
             setChosenColors(3, 2, 2, 2, 3, 3);
 
@@ -32,47 +42,145 @@
             //visualize_field();
 
             for (let i = 0; i < num; i++) {
-                //x value start slightly outside the right of canvas, z value how close to viewer
-                var loc = createVector(random(spacial_width * 1.2), random(spacial_height), 2);
-                var angle = 0; //any value to initialize
-                var dir = createVector(cos(angle), sin(angle));
-                var speed = random(0.5, 2);
-                // var speed = random(5,map(mouseX,0,spacial_width,5,20));   // faster
-                particles[i] = new Particle(loc, dir, speed);
+                particles[i] = new Particle(null,null,null,true,true);
             }
         }
 
         function draw() {
-            background(0);
-            //fill(0, 10, 0);
             orbitControl();
-
-            //rect(-spacial_width/2, -spacial_height/2, spacial_width, spacial_height);
-            for (let i = 0; i < particles.length; i++) {
-                particles[i].run();
-            }
+            background(0);
+            drawAxis();
+            drawBox();
+            //fill(0, 10, 0);
+            
+            
+            needPause = false;
             if (keyIsDown(ENTER)) {
                 visualize_field();
+                for (let i = 0; i < particles.length; i++) {
+                    particles[i].draw(50);
+                }
+                needPause = true;
+            } 
+            if (keyIsDown(UP_ARROW)) {
+                for (let i = 0; i < particles.length; i++) {    
+                    particles[i].draw(50);
+                    visualize_point(particles[i].loc);
+                }
+                needPause = true;
             }
+            if (keyIsDown(SHIFT)) {
+                renderFlows(0,0,-1, 500, 1, !shiftWasDown&&displayOnFlow);
+                renderFlows(0,0,1, 500, 1, !shiftWasDown&&displayOnFlow);
+                renderFlows(-1,0,0, 500, 1, !shiftWasDown&&displayOnFlow);
+                needPause = true;
+                for (let i = 0; i < extraParticles.length; i++) {
+                    extraParticles[i].run();
+                }
+                shiftWasDown=true
+            } else if (shiftWasDown) {
+                shiftWasDown = false;
+                while (extraParticles.length) {
+                    delete extraParticles.pop();
+                }
+                extraParticles = [];
+            }
+            if (!needPause) {
+                for (let i = 0; i < particles.length; i++) {
+                    particles[i].run();
+                }
+            }
+        }
+
+        function renderFlows(x0=0,y0=0,z0=-1,jump=500, dirFlip=1, extra=false) {
+            jump = 500;
+            if (x0!=0) {
+                for (var y=-spacial_height/2; y<=spacial_height/2; y+=jump) {
+                    for (var z=-spacial_depth/2; z<=spacial_depth/2; z+=jump) {
+                        renderFlow(spacial_width/2*x0,y,z,dirFlip);
+                        if (extra) extraParticles.push(new Particle(createVector(spacial_width/2*x0,y,z),null,6,true));
+                    }
+                }
+            } else if (y0!=0) {
+                for (var x=-spacial_width/2; x<=spacial_width/2; x+=jump) {
+                    for (var z=-spacial_depth/2; z<=spacial_depth/2; z+=jump) {
+                        renderFlow(x,spacial_height/2*y0,z,dirFlip);
+                        if (extra) extraParticles.push(new Particle(createVector(x,spacial_height/2*y0,z),null,6,true));
+                    }
+                }
+            } else {
+                for (var y=-spacial_height/2; y<=spacial_height/2; y+=jump) {
+                    for (var x=-spacial_width/2; x<=spacial_width/2; x+=jump) {
+                        renderFlow(x,y,spacial_depth/2*z0,dirFlip);
+                        if (extra) extraParticles.push(new Particle(createVector(x,y,spacial_depth/2*z0),null,6,true));
+                    }
+                }
+                renderFlow(0,0,spacial_depth/2*z0);
+            }
+        }
+
+        function renderFlow(x,y,z,dirFlip=1,r=2) {
+            var pos = createVector(x,y,z);
+            stroke(0,100,360);
+            strokeWeight(1);
+            noFill();
+            beginShape();
+
+            count = 0;
+            while(count < 2000)// && !(pos.x < -spacial_width/2 || pos.x > spacial_width/2 || pos.y < -spacial_height/2 || pos.y > spacial_height/2 || pos.z < -spacial_depth/2 || pos.z > spacial_depth/2))
+            {
+                count++;
+                if (count % 20 == 0) {
+                    vertex(pos.x,pos.y,pos.z);
+                    vertex(pos.x,pos.y,pos.z);
+                }
+                pos.add(p5.Vector.mult(get_vector(pos),dirFlip*r*2));
+            }
+            endShape();
+            strokeWeight(1);
+            noStroke();
         }
 
         // function get_angle(x,y) {
         //     return noise(x / noiseScale, y / noiseScale, frameCount / noiseScale*10) * TWO_PI * noiseStrength; //0-2PI
         // }
 
-        function visualize_field() {
-            var length = 50;
+        function visualize_point(loc, point = false) {
+            var length = 100;
             var weight = 5;
-            stroke(0,0,360);
+            stroke(0,100,360);
+            strokeWeight(10);
             noFill();
-            for (var x=-spacial_width/2; x<spacial_width/2; x+=100) {
-                for (var y=-spacial_height/2; y<spacial_height/2; y+=100) {
-                    strokeWeight(weight);
-                    line(x+weight*cos(get_angle(x,y)), y+weight*sin(get_angle(x,y)), 0,x+length*cos(get_angle(x,y)), y+length*sin(get_angle(x,y)), 0);
-                    //circle(x,y,10);
+            lineCoords = get_vector(loc);
+
+            if (point) {
+                push();
+                translate(loc.x,loc.y,loc.z);
+                sphere(weight);
+                pop();
+            }
+
+            beginShape(LINES);
+                vertex(loc.x+weight*lineCoords.x, loc.y+weight*lineCoords.y, loc.z+weight*lineCoords.z);
+                vertex(loc.x+length*lineCoords.x, loc.y+length*lineCoords.y, loc.z+length*lineCoords.z);
+            endShape();
+            strokeWeight(1);
+            noStroke();
+        }
+
+        function visualize_field() {
+            var length = 100;
+            var weight = 5;
+            xJump = 300;
+            yJump = 300;
+            zJump = 500;
+            for (var x=-spacial_width/2; x<=spacial_width/2; x+=xJump) {
+                for (var y=-spacial_height/2; y<=spacial_height/2; y+=yJump) {
+                    for (var z=-spacial_depth/2; z<=spacial_depth/2; z+=zJump) {
+                        visualize_point(createVector(x,y,z), true);
+                    }
                 }
             }
-            noStroke();
         }
 
         function get_random_color() {
@@ -94,32 +202,65 @@
         //     return angle;
         // }
 
-        function get_angle(loc) {
+        // function get_vector(loc) {
+        //     // Polar Coordinates -------------------------
+        //     var out = createVector();
+        //     var theta = (Math.atan2(loc.y,loc.x) - 0 + 2*PI) % (2*PI);
+        //     var r = sqrt(Math.pow(loc.y, 2) + Math.pow(loc.x, 2));
+
+        //     var angle = theta + PI / 2;
+            
+        //     out.x = cos(angle+.3);
+        //     out.y = sin(angle+.3);
+        //     out.z = -1*loc.z**3/10000000000;
+
+        //     if (out.mag()!=0);
+        //         out = p5.Vector.mult(out, 1/out.mag());
+
+
+        //     //out = deflect(out, loc, createVector(0,0,0), -400);
+        //     //out = deflect(out, loc, createVector(500,500,0), -500);
+
+        //     return out;
+        // }
+
+        function get_vector(loc) {
             // Polar Coordinates -------------------------
-            // x = x-spacial_width/2;
-            // y = y-wspacial_height/2;
-            var theta = (Math.atan2(loc.y,loc.x) - 0 + 2*PI) % (2*PI)+ (loc.z+spacial_depth/2)/spacial_depth*2*PI/50;
-            var r = sqrt(Math.pow(loc.y, 2) + Math.pow(loc.x, 2));
+            var out = createVector();
+            var theta = (Math.atan2(loc.y-map(noise(loc.z),0,1,-spacial_height/4,spacial_height/4),loc.x) - 0 + 2*PI) % (2*PI);
+            var r = sqrt(Math.pow(loc.y-noise(loc.z), 2) + Math.pow(loc.x, 2));
 
             var angle = theta + PI / 2;
+            
+            out.x = .5*cos(angle);
+            out.y = 2*sin(angle);
+            out.z = 0;//-1*loc.z**3/10000000000;
 
-            //angle = deflect(angle, loc.x, loc.y, mouseX-spacial_width/2, mouseY-spacial_height/2, -300);
-            //angle = deflect(angle, loc.x, loc.y, -200, 300, 300);
+            if (out.mag()!=0);
+                out = p5.Vector.mult(out, 1/out.mag());
 
-            return angle;
+
+            out = deflect(out, loc, createVector(0,0,0), -400);
+            out = deflect(out, loc, createVector(-1000,0,0), 700);
+            out = deflect(out, loc, createVector(1000,0,0), 700);
+
+            out = deflect(out, loc, createVector(0,-1000,0), 700);
+            out = deflect(out, loc, createVector(0,1000,0), 700);
+
+            return out;
         }
 
-        function deflect(angle, x, y, x1, y1, intensity) {
-            var xcomp = cos(angle);
-            var ycomp = sin(angle);
+        function deflect(dir, loc, loc_source, intensity) {
+            var delta = p5.Vector.sub(loc, loc_source);
+            var distance = delta.mag();
+            if (distance < 120) {
+                return createVector(0,0,0);
+            }
 
-            var dx = x-x1;
-            var dy = y-y1;
-            var distance = sqrt(dx**2 + dy**2);
-
-            var mag = intensity/distance**2;
+            var magnitude_target = intensity/distance**2;
             
-            return Math.atan2(dy*mag+ycomp, dx*mag+xcomp);
+            
+            return p5.Vector.add(dir, p5.Vector.mult(delta,magnitude_target));
         }
 
 
@@ -129,12 +270,16 @@
         
 
         class Particle {
-            constructor(_loc, _dir, _speed) {
+            constructor(_loc=createVector(), _dir=createVector(), _speed=null, _persistent=false, _immortal=false) {
                 this.loc = _loc;
-                this.dir = _dir;
-                this.speed = _speed;
-
-                this.reset();
+                this.dir = _dir!=null ? _dir : createVector();
+                this.speed = _speed ? _speed : 15*random(0.5, 2);
+                this.persistent = _persistent;
+                this.immortal = _immortal;
+                if (this.loc == null || this.loc.mag()==0) {
+                    this.loc = createVector();
+                    this.reset();
+                }
 
                 this.direction = 2*random()>1 && half_backwards ? -1 : 1;
 
@@ -145,27 +290,28 @@
             }
             run() {
                 this.move();
-                this.checkEdges();
-                this.runLife();
+                if (!this.persistent) {
+                    this.checkEdges();
+                    if (!this.immortal) this.runLife();
+                }
                 this.draw();
-                this.colorUpdate();
+                //this.colorUpdate();
             }
             move() {
-                var angle = get_angle(this.loc);
-                if (direction_turnaround_corrections && this.dir.x*cos(angle)+this.dir.y*sin(angle) < 0) {
-                    angle += PI;
+                var new_dir = get_vector(this.loc);
+                if (direction_turnaround_corrections && this.dir.x*new_dir.x+this.dir.y*new_dir.y+this.dir.z+new_dir.z < 0) {
+                    new_dir = p5.Vector.mult(new_dir, -1);
                 }
-                this.dir.x = cos(angle);
-                this.dir.y = sin(angle);
+                this.dir = p5.Vector.mult(new_dir, new_dir.mag());
                 var vel = this.dir.copy();
-                var d = 15 * this.direction;  //direction change
-                vel.mult(this.speed * d); //vel = vel * (speed*d)
+                var d = this.speed * this.direction;  //direction change
+                vel.mult(d); //vel = vel * (speed*d)
                 this.loc.add(vel); //loc = loc + vel
             }
             checkEdges() {
                 //float distance = dist(spacial_width/2, spacial_height/2, loc.x, loc.y);
                 //if (distance>150) {
-                if (this.loc.x < -spacial_width/2 || this.loc.x > spacial_width/2 || this.loc.y < -spacial_height/2 || this.loc.y > spacial_height/2) {
+                if (this.loc.x < -spacial_width/2 || this.loc.x > spacial_width/2 || this.loc.y < -spacial_height/2 || this.loc.y > spacial_height/2 || this.loc.z < -spacial_depth/2 || this.loc.z > spacial_depth/2) {
                     this.reset();
                 }
             }
@@ -178,11 +324,11 @@
             reset() {
                 this.loc.x = random(spacial_width)-spacial_width/2;
                 this.loc.y = random(spacial_height)-spacial_height/2;
-                this.loc.z = random(spacial_depth)-spacial_height/2;
+                this.loc.z = random(spacial_depth)-spacial_depth/2;
                 this.lifeLived = 0;
             }
-            draw() {
-                fill(this.color.hue, this.color.saturation, this.color.lightness);
+            draw(transparency = 100) {
+                fill(this.color.hue, this.color.saturation, this.color.lightness, 360*transparency/100);
                 push();
                 translate(this.loc.x, this.loc.y, this.loc.z);
                 sphere(10);//sphere(.2+floor(20*sin(this.lifeLived/this.lifeMax*2*PI)));
@@ -190,7 +336,7 @@
                 
             }
             colorUpdate() {
-                this.color.hue = (this.color.hue + .01) % 360;
+                this.color.hue = (this.color.hue + .1) % 360;
             }
         }
 
@@ -205,7 +351,37 @@
 
 
 
+        function drawAxis() {
+            var factor=10;
 
+            stroke(0,360,180);
+            beginShape();
+                vertex(-spacial_width/2*factor,0,0);
+                vertex(spacial_width/2*factor,0,0);
+            endShape();
+
+            stroke(120,360,180);
+            beginShape();
+                vertex(0,-spacial_height/2*factor,0);
+                vertex(0,spacial_height/2*factor,0);
+            endShape();
+
+            stroke(240,360,180);
+            beginShape();
+                vertex(0,0,-spacial_depth/2*factor);
+                vertex(0,0,spacial_depth/2*factor);
+            endShape();
+
+            noStroke();
+        }
+
+        function drawBox() {
+            noFill();
+            //fill(0,180,360);
+            stroke(0,180,360);
+            box(spacial_width,spacial_height,spacial_depth,4,4);
+            noStroke();
+        }
 
 
 
