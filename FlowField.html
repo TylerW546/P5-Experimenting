@@ -17,22 +17,6 @@
             }
         }
 
-        function angleFromXY(x, y) {
-            if (x == 0) {
-                if (y >= 0) {
-                    return PI / 2;
-                } else {
-                    return 3 * PI / 2;
-                }
-            }
-
-            theta = (Math.atan(y / x)) + 2 * PI;
-            if (x < 0) {
-                theta += PI;
-            }
-            return theta % (2*PI);
-        }
-
         self.onmessage = function(e) {
             [x_list, y_list, grid, left_x, top_y, resolution, step_length_list, num_steps_list, num_columns, num_rows, curves_made_before, backwards_traversal, random, addition_values] = e.data.args;
             curves = [];
@@ -207,22 +191,6 @@
             } else {
                 return -1*value;
             }
-        }
-
-        function angleFromXY(x, y) {
-            if (x == 0) {
-                if (y >= 0) {
-                    return PI / 2;
-                } else {
-                    return 3 * PI / 2;
-                }
-            }
-
-            var theta = (Math.atan(y / x)) + 2 * PI;
-            if (x < 0) {
-                theta += PI;
-            }
-            return theta % (2*PI);
         }
 
         self.onmessage = function(e) {
@@ -420,7 +388,7 @@
             // Polar Coordinates -------------------------
             var x = (col - num_columns / 2);
             var y = (row - num_rows / 2);
-            var theta = (angleFromXY(x, y) - theta_offset + 2*PI) % (2*PI);
+            var theta = (Math.atan2(y,x) - theta_offset + 2*PI) % (2*PI);
             var r = sqrt(Math.pow((row - num_rows / 2), 2) + Math.pow((col - num_columns / 2), 2));
         
             // translate the noise value to an angle (betwen 0 and 2 * PI)
@@ -434,7 +402,7 @@
             // Polar Coordinates -------------------------
             var x = (col - num_columns / 2);
             var y = (row - num_rows / 2);
-            var theta = (angleFromXY(x, y) - theta_offset + 2*PI) % (2*PI);
+            var theta = (Math.atan2(y,x) - theta_offset + 2*PI) % (2*PI);
             var r = sqrt(Math.pow((row - num_rows / 2), 2) + Math.pow((col - num_columns / 2), 2));
         
             // Processing's noise() works best when the step between
@@ -452,7 +420,7 @@
             // Polar Coordinates -------------------------
             var x = (col - num_columns / 2);
             var y = (row - num_rows / 2);
-            var theta = (angleFromXY(x, y) - theta_offset + 2*PI) % (2*PI);
+            var theta = (Math.atan2(y,x) - theta_offset + 2*PI) % (2*PI);
             var r = sqrt(Math.pow((row - num_rows / 2), 2) + Math.pow((col - num_columns / 2), 2));
         
             var angle = theta + PI / 2;
@@ -464,7 +432,7 @@
             // Polar Coordinates -------------------------
             var x = (col - num_columns / 2);
             var y = (row - num_rows / 2);
-            var theta = (angleFromXY(x, y) - theta_offset + 2*PI) % (2*PI);
+            var theta = (Math.atan2(y,x) - theta_offset + 2*PI) % (2*PI);
             var r = sqrt(Math.pow((row - num_rows / 2), 2) + Math.pow((col - num_columns / 2), 2));
 
             // Flower, where a-2 is the number of petals
@@ -481,7 +449,7 @@
         function pulling(angle, row, col, theta_offset, args) {
             var x = (col - num_columns / 2);
             var y = (row - num_rows / 2);
-            var theta = (angleFromXY(x, y) - theta_offset + 2*PI) % (2*PI);
+            var theta = (Math.atan2(y,x) - theta_offset + 2*PI) % (2*PI);
 
             var vector_pull = [Math.cos(angle) - args.h_pull_power * Math.cos(theta), Math.sin(angle) - args.v_pull_power * Math.sin(theta)]
 
@@ -1287,22 +1255,6 @@
                 }
             };
             return w;
-        }
-
-        function angleFromXY(x, y) {
-            if (x == 0) {
-                if (y >= 0) {
-                    return PI / 2;
-                } else {
-                    return 3 * PI / 2;
-                }
-            }
-
-            theta = (Math.atan(y / x)) + 2 * PI;
-            if (x < 0) {
-                theta += PI;
-            }
-            return theta;
         }
 
         function findWhiteSpace(radius, max_tries) {
