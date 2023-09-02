@@ -1,0 +1,294 @@
+<html>
+
+<head>
+    <title>Flows</title>
+</head>
+
+<body>
+    <script src="p5.js"></script>
+    <script type="text/javascript">
+        var num = 500;
+        var noiseScale = 500, noiseStrength = 1;
+        var particles = [num];
+
+        var direction_turnaround_corrections = false;
+        var half_backwards = false;
+        
+        var chosen_colors = [];
+
+
+        var spacial_width = 2000;
+        var spacial_height = 2000;
+        var spacial_depth = 2000;
+
+        
+        function setup() {
+            createCanvas(2000, 1000, WEBGL);
+            noStroke();
+            colorMode(HSL, 360);
+            setChosenColors(3, 2, 2, 2, 3, 3);
+
+            background(0);
+            //visualize_field();
+
+            for (let i = 0; i < num; i++) {
+                //x value start slightly outside the right of canvas, z value how close to viewer
+                var loc = createVector(random(spacial_width * 1.2), random(spacial_height), 2);
+                var angle = 0; //any value to initialize
+                var dir = createVector(cos(angle), sin(angle));
+                var speed = random(0.5, 2);
+                // var speed = random(5,map(mouseX,0,spacial_width,5,20));   // faster
+                particles[i] = new Particle(loc, dir, speed);
+            }
+        }
+
+        function draw() {
+            background(0);
+            //fill(0, 10, 0);
+            orbitControl();
+
+            //rect(-spacial_width/2, -spacial_height/2, spacial_width, spacial_height);
+            for (let i = 0; i < particles.length; i++) {
+                particles[i].run();
+            }
+            if (keyIsDown(ENTER)) {
+                visualize_field();
+            }
+        }
+
+        // function get_angle(x,y) {
+        //     return noise(x / noiseScale, y / noiseScale, frameCount / noiseScale*10) * TWO_PI * noiseStrength; //0-2PI
+        // }
+
+        function visualize_field() {
+            var length = 50;
+            var weight = 5;
+            stroke(0,0,360);
+            noFill();
+            for (var x=-spacial_width/2; x<spacial_width/2; x+=100) {
+                for (var y=-spacial_height/2; y<spacial_height/2; y+=100) {
+                    strokeWeight(weight);
+                    line(x+weight*cos(get_angle(x,y)), y+weight*sin(get_angle(x,y)), 0,x+length*cos(get_angle(x,y)), y+length*sin(get_angle(x,y)), 0);
+                    //circle(x,y,10);
+                }
+            }
+            noStroke();
+        }
+
+        function get_random_color() {
+            return color(random(255),random(255),random(255))
+        }
+
+        // //Flowers
+        // function get_angle(x,y) {
+        //     // Polar Coordinates -------------------------
+        //     x = x-spacial_width/2;
+        //     y = y-spacial_height/2;
+
+        //     var theta = (Math.atan2(y,x) - 0 + 2*PI) % (2*PI) + noise(x/noiseScale,y/noiseScale,1) * TWO_PI * noiseStrength/5;
+        //     var r = sqrt(Math.pow(y, 2) + Math.pow(x, 2));
+
+        //     // Flower, where a-2 is the number of petals
+        //     var angle = 5/2*theta;
+
+        //     return angle;
+        // }
+
+        function get_angle(loc) {
+            // Polar Coordinates -------------------------
+            // x = x-spacial_width/2;
+            // y = y-wspacial_height/2;
+            var theta = (Math.atan2(loc.y,loc.x) - 0 + 2*PI) % (2*PI)+ (loc.z+spacial_depth/2)/spacial_depth*2*PI/50;
+            var r = sqrt(Math.pow(loc.y, 2) + Math.pow(loc.x, 2));
+
+            var angle = theta + PI / 2;
+
+            //angle = deflect(angle, loc.x, loc.y, mouseX-spacial_width/2, mouseY-spacial_height/2, -300);
+            //angle = deflect(angle, loc.x, loc.y, -200, 300, 300);
+
+            return angle;
+        }
+
+        function deflect(angle, x, y, x1, y1, intensity) {
+            var xcomp = cos(angle);
+            var ycomp = sin(angle);
+
+            var dx = x-x1;
+            var dy = y-y1;
+            var distance = sqrt(dx**2 + dy**2);
+
+            var mag = intensity/distance**2;
+            
+            return Math.atan2(dy*mag+ycomp, dx*mag+xcomp);
+        }
+
+
+        function windowResized() {
+            resizeCanvas(width, height);
+        }
+        
+
+        class Particle {
+            constructor(_loc, _dir, _speed) {
+                this.loc = _loc;
+                this.dir = _dir;
+                this.speed = _speed;
+
+                this.reset();
+
+                this.direction = 2*random()>1 && half_backwards ? -1 : 1;
+
+                this.lifeLived = 0;
+                this.lifeMax = 1000+random(100);
+
+                this.color = chosen_colors[floor(random() * chosen_colors.length)]; //get_random_color();
+            }
+            run() {
+                this.move();
+                this.checkEdges();
+                this.runLife();
+                this.draw();
+                this.colorUpdate();
+            }
+            move() {
+                var angle = get_angle(this.loc);
+                if (direction_turnaround_corrections && this.dir.x*cos(angle)+this.dir.y*sin(angle) < 0) {
+                    angle += PI;
+                }
+                this.dir.x = cos(angle);
+                this.dir.y = sin(angle);
+                var vel = this.dir.copy();
+                var d = 15 * this.direction;  //direction change
+                vel.mult(this.speed * d); //vel = vel * (speed*d)
+                this.loc.add(vel); //loc = loc + vel
+            }
+            checkEdges() {
+                //float distance = dist(spacial_width/2, spacial_height/2, loc.x, loc.y);
+                //if (distance>150) {
+                if (this.loc.x < -spacial_width/2 || this.loc.x > spacial_width/2 || this.loc.y < -spacial_height/2 || this.loc.y > spacial_height/2) {
+                    this.reset();
+                }
+            }
+            runLife() {
+                this.lifeLived++;
+                if (this.lifeLived > this.lifeMax) {
+                    this.reset();
+                } 
+            }
+            reset() {
+                this.loc.x = random(spacial_width)-spacial_width/2;
+                this.loc.y = random(spacial_height)-spacial_height/2;
+                this.loc.z = random(spacial_depth)-spacial_height/2;
+                this.lifeLived = 0;
+            }
+            draw() {
+                fill(this.color.hue, this.color.saturation, this.color.lightness);
+                push();
+                translate(this.loc.x, this.loc.y, this.loc.z);
+                sphere(10);//sphere(.2+floor(20*sin(this.lifeLived/this.lifeMax*2*PI)));
+                pop();
+                
+            }
+            colorUpdate() {
+                this.color.hue = (this.color.hue + .01) % 360;
+            }
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        // HSL color storage
+        class HSLColor {
+            constructor(H, S, L) {
+                this.hue = Math.floor(H)%360;
+                this.saturation = Math.floor(S)%360;
+                this.lightness = Math.floor(L)%360;
+            }
+
+            get values() {
+                return [this.hue, this.saturation, this.lightness]
+            }
+
+            toString() {
+                return '[' + this.hue.toString() + ',' + this.saturation.toString() + ',' + this.lightness.toString() + ']'
+            }
+        }
+
+        class RandomColor extends HSLColor {
+            constructor() {
+                super()
+                
+                this.hue = Math.floor(random() * 360);
+                this.saturation = Math.floor(random() * 360);
+                this.lightness = Math.floor(random() * 260 + 50);
+            }
+        }
+
+        // A list of the same color with varying lightness
+        class MonochromaticSet {
+            constructor(lDiff, lMin, lMax, startingColor = new HSLColor(random() * 360, random() * 100 + 260, 100)) {
+                this.colors = [];
+
+                this.startingColor = startingColor;
+                this.lDiff = lDiff;
+                this.lMin = lMin;
+                this.lMax = lMax;
+
+                let hue = startingColor.hue;
+                let sat = startingColor.saturation;
+                let startL = (startingColor.lightness - lMin) % lDiff + lMin;
+                for (let L = startL; L < lMax; L += lDiff) {
+                    this.colors.push(new HSLColor(hue, sat, L));
+                }
+            }
+
+            // Makes another MonochromaticSet with a slightly different hue
+            createSecondary(lDiff = this.lDiff, lMin = this.lMin, lMax = this.lMax, hOff = 30) {
+                return new MonochromaticSet(lDiff, lMin, lMax, new HSLColor((this.startingColor.hue + hOff) % 360, this.startingColor.saturation, this.startingColor.lightness));
+            }
+        }
+
+        // Generates color palette
+        function setChosenColors(sets = 2, min_off_set = 1, max_off_set = 3, colors_per_set = 3, min_off_color = 3, max_off_color = 5) {
+            var colors = [];
+
+            colors.push(new MonochromaticSet(12, 0, 360))
+            for (let i = 0; i < 11; i++) {
+                colors.push(colors[colors.length - 1].createSecondary())
+            }
+
+            var color_offs = [];
+            for (let set = 0; set < sets; set++) {
+                color_offs.push(Math.floor(lerp(min_off_color, max_off_color + 1, random())));
+            }
+
+
+            var set_index = Math.floor(lerp(0,colors.length, random()));
+            for (let set = 0; set < sets; set++) {
+                var color_index = Math.floor(lerp(0,colors[set_index].colors.length, random()));
+                for (let color = 0; color < colors_per_set; color++) {
+                    chosen_colors.push(colors[set_index].colors[color_index]);
+                    color_index += color_offs[set];
+                    color_index %= colors[set_index].colors.length;
+                }
+                set_index += Math.floor(lerp(min_off_set, max_off_set + 1, random()));
+                set_index %= colors.length;
+            }
+        }
+    </script>
+</body>
+
+</html>

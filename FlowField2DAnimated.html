@@ -7,7 +7,7 @@
 <body>
     <script src="p5.js"></script>
     <script type="text/javascript">
-        var num = 500;
+        var num = 5000;
         var noiseScale = 500, noiseStrength = 1;
         var particles = [num];
 
@@ -18,7 +18,7 @@
 
         
         function setup() {
-            createCanvas(windowWidth, windowHeight, WEBGL);
+            createCanvas(windowWidth, windowHeight);
             noStroke();
             colorMode(HSL, 360);
             setChosenColors(3, 2, 2, 2, 3, 3);
@@ -28,7 +28,7 @@
 
             for (let i = 0; i < num; i++) {
                 //x value start slightly outside the right of canvas, z value how close to viewer
-                var loc = createVector(random(width * 1.2), random(height), 2);
+                var loc = createVector(random(width * 1.2)-width*.1, random(height*1.2)-height*.1, 2);
                 var angle = 0; //any value to initialize
                 var dir = createVector(cos(angle), sin(angle));
                 var speed = random(0.5, 2);
@@ -38,11 +38,10 @@
         }
 
         function draw() {
-            background(0);
-            //fill(0, 10, 0);
-            orbitControl();
+            //background(0);
+            fill(0, 10);
 
-            //rect(-width/2, -height/2, width, height);
+            rect(0,0, width, height);
             for (let i = 0; i < particles.length; i++) {
                 particles[i].run();
             }
@@ -91,14 +90,14 @@
 
         function get_angle(x, y) {
             // Polar Coordinates -------------------------
-            // x = x-windowWidth/2;
-            // y = y-windowHeight/2;
+            x = x-windowWidth/2;
+            y = y-windowHeight/2;
             var theta = (Math.atan2(y,x) - 0 + 2*PI) % (2*PI);
             var r = sqrt(Math.pow(y, 2) + Math.pow(x, 2));
 
             var angle = theta + PI / 2;
 
-            angle = deflect(angle, x, y, mouseX-windowWidth/2, mouseY-windowHeight/2, -300);
+            angle = deflect(angle, x, y, mouseX-windowWidth/2, mouseY-windowHeight/2, -50);
             //angle = deflect(angle, x, y, -200, 300, 300);
 
             return angle;
@@ -160,7 +159,7 @@
             checkEdges() {
                 //float distance = dist(width/2, height/2, loc.x, loc.y);
                 //if (distance>150) {
-                if (this.loc.x < -width/2 || this.loc.x > width/2 || this.loc.y < -height/2 || this.loc.y > height/2) {
+                if (this.loc.x < -.1*width || this.loc.x > width*1.1 || this.loc.y < -.1*height || this.loc.y > height*1.1) {
                     this.reset();
                 }
             }
@@ -171,22 +170,27 @@
                 } 
             }
             reset() {
-                this.loc.x = random(width * 1.2)-width/2;
-                this.loc.y = random(height * 1.2)-height/2;
+                this.loc.x = random(width * 1.2)-width*.1;
+                this.loc.y = random(height * 1.2)-height*.1;
                 this.lifeLived = 0;
             }
             draw() {
                 fill(this.color.hue, this.color.saturation, this.color.lightness);
-                push();
-                translate(this.loc.x, this.loc.y, 10);
-                sphere(.2+floor(20*sin(this.lifeLived/this.lifeMax*2*PI)));
-                pop();
+                circle(this.loc.x, this.loc.y,.2+floor(4*sin(this.lifeLived/this.lifeMax*2*PI)));
                 
             }
             colorUpdate() {
-                this.color.hue = (this.color.hue + .001) % 360;
+                this.color.hue = (this.color.hue + .05) % 360;
             }
         }
+
+
+
+
+
+
+
+
 
         // HSL color storage
         class HSLColor {
