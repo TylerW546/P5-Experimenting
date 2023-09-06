@@ -27,8 +27,8 @@
 
         
         function setup() {
-            createCanvas(windowWidth-20, windowHeight-20);
-            noStroke();
+            createCanvas(min(2000,windowWidth-20),min(1000,windowHeight-20),WEBGL);
+			noStroke();
             colorMode(HSL, 360);
             setChosenColors(3, 2, 2, 2, 3, 3);
 
@@ -288,6 +288,10 @@
                 set_index += Math.floor(lerp(min_off_set, max_off_set + 1, random()));
                 set_index %= colors.length;
             }
+        }
+
+        function windowResized() {
+            resizeCanvas(windowWidth-20, windowHeight-20);
         }
     </script>
 </body>

@@ -29,8 +29,8 @@
 
         
         function setup() {
-            createCanvas(2000, 1000, WEBGL);
-            perspective(PI/3, 2, .2, 800000);
+            createCanvas(min(2000,windowWidth-20),min(1000,windowHeight-20),WEBGL);
+			perspective(PI/3, windowWidth/windowHeight, .2, 800000);
             noiseSeed(Math.floor(lerp(0, 100000, random())));
             
             noStroke();
@@ -265,7 +265,7 @@
 
 
         function windowResized() {
-            resizeCanvas(width, height);
+            resizeCanvas(windowWidth-20, windowHeight-20);
         }
         
 
@@ -464,6 +464,8 @@
                 set_index %= colors.length;
             }
         }
+
+        
     </script>
 </body>
 
