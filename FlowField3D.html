@@ -7,11 +7,11 @@
 <body>
     <script src="p5.js"></script>
     <script type="text/javascript">
-        var num = 5000;
+        var num = 1000;
 
         var spacial_width = 2000;
         var spacial_height = 2000;
-        var spacial_depth = 5000;
+        var spacial_depth = 2000;
 
         var noiseScale = 10, noiseStrength = 4;
         var particles = [num];
@@ -70,9 +70,12 @@
                 needPause = true;
             }
             if (keyIsDown(SHIFT)) {
-                renderFlows(0,0,-1, 500, 1, !shiftWasDown&&displayOnFlow);
-                renderFlows(0,0,1, 500, 1, !shiftWasDown&&displayOnFlow);
-                renderFlows(-1,0,0, 500, 1, !shiftWasDown&&displayOnFlow);
+                renderFlows(.5,0,0, 500, 1, !shiftWasDown&&displayOnFlow);
+                renderFlows(0,.5,0, 500, 1, !shiftWasDown&&displayOnFlow);
+                renderFlows(0,0,.5, 500, 1, !shiftWasDown&&displayOnFlow);
+                renderFlows(-.5,0,0, 500, 1, !shiftWasDown&&displayOnFlow);
+                renderFlows(0,-.5,0, 500, 1, !shiftWasDown&&displayOnFlow);
+                renderFlows(0,0,-.5, 500, 1, !shiftWasDown&&displayOnFlow);
                 needPause = true;
                 for (let i = 0; i < extraParticles.length; i++) {
                     extraParticles[i].run();
@@ -93,26 +96,25 @@
         }
 
         function renderFlows(x0=0,y0=0,z0=-1,jump=500, dirFlip=1, extra=false) {
-            jump = 500;
             if (x0!=0) {
                 for (var y=-spacial_height/2; y<=spacial_height/2; y+=jump) {
                     for (var z=-spacial_depth/2; z<=spacial_depth/2; z+=jump) {
-                        renderFlow(spacial_width/2*x0,y,z,dirFlip);
-                        if (extra) extraParticles.push(new Particle(createVector(spacial_width/2*x0,y,z),null,6,true));
+                        renderFlow(spacial_width/2*x0,y*Math.abs(x0),z*Math.abs(x0),dirFlip);
+                        if (extra) extraParticles.push(new Particle(createVector(spacial_width/2*x0,y*Math.abs(x0),z*Math.abs(x0)),null,6,true));
                     }
                 }
             } else if (y0!=0) {
                 for (var x=-spacial_width/2; x<=spacial_width/2; x+=jump) {
                     for (var z=-spacial_depth/2; z<=spacial_depth/2; z+=jump) {
-                        renderFlow(x,spacial_height/2*y0,z,dirFlip);
-                        if (extra) extraParticles.push(new Particle(createVector(x,spacial_height/2*y0,z),null,6,true));
+                        renderFlow(x*Math.abs(y0),spacial_height/2*y0,z*Math.abs(y0),dirFlip);
+                        if (extra) extraParticles.push(new Particle(createVector(x*Math.abs(y0),spacial_height/2*y0,z*Math.abs(y0)),null,6,true));
                     }
                 }
             } else {
                 for (var y=-spacial_height/2; y<=spacial_height/2; y+=jump) {
                     for (var x=-spacial_width/2; x<=spacial_width/2; x+=jump) {
-                        renderFlow(x,y,spacial_depth/2*z0,dirFlip);
-                        if (extra) extraParticles.push(new Particle(createVector(x,y,spacial_depth/2*z0),null,6,true));
+                        renderFlow(x*Math.abs(z0),y*Math.abs(z0),spacial_depth/2*z0,dirFlip);
+                        if (extra) extraParticles.push(new Particle(createVector(x*Math.abs(z0),y*Math.abs(z0),spacial_depth/2*z0),null,6,true));
                     }
                 }
                 renderFlow(0,0,spacial_depth/2*z0);
@@ -127,14 +129,14 @@
             beginShape();
 
             count = 0;
-            while(count < 2000)// && !(pos.x < -spacial_width/2 || pos.x > spacial_width/2 || pos.y < -spacial_height/2 || pos.y > spacial_height/2 || pos.z < -spacial_depth/2 || pos.z > spacial_depth/2))
+            while(count < 10 && !(pos.x < -spacial_width/2 || pos.x > spacial_width/2 || pos.y < -spacial_height/2 || pos.y > spacial_height/2 || pos.z < -spacial_depth/2 || pos.z > spacial_depth/2))
             {
                 count++;
                 if (count % 20 == 0) {
                     vertex(pos.x,pos.y,pos.z);
                     vertex(pos.x,pos.y,pos.z);
                 }
-                pos.add(p5.Vector.mult(get_vector(pos),dirFlip*r*2));
+                pos.add(p5.Vector.mult(get_vector(pos),dirFlip*r*5));
             }
             endShape();
             strokeWeight(1);
@@ -232,20 +234,20 @@
 
             var angle = theta + PI / 2;
             
-            out.x = .5*cos(angle);
-            out.y = 2*sin(angle);
-            out.z = 0;//-1*loc.z**3/10000000000;
+            // out.x = .5*cos(angle);
+            // out.y = 2*sin(angle);
+            // out.z = 0;//-1*loc.z**3/10000000000;
 
             if (out.mag()!=0);
                 out = p5.Vector.mult(out, 1/out.mag());
 
 
-            out = deflect(out, loc, createVector(0,0,0), -400);
-            out = deflect(out, loc, createVector(-1000,0,0), 700);
-            out = deflect(out, loc, createVector(1000,0,0), 700);
+            // out = deflect(out, loc, createVector(0,0,0), -400);
+            // out = deflect(out, loc, createVector(-1000,0,0), 700);
+            // out = deflect(out, loc, createVector(1000,0,0), 700);
 
-            out = deflect(out, loc, createVector(0,-1000,0), 700);
-            out = deflect(out, loc, createVector(0,1000,0), 700);
+            // out = deflect(out, loc, createVector(0,-1000,0), 700);
+            // out = deflect(out, loc, createVector(0,1000,0), 700);
 
             return out;
         }
