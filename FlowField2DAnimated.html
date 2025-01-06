@@ -8,12 +8,12 @@
 <body style="background-color:Black;">
     <script src="p5.js"></script>
     <script type="text/javascript">
-        var num = 3000;
+        var num = 1000;
         var noiseScale = 500, noiseStrength = 1;
         var particles = [num];
 
         var direction_turnaround_corrections = true;
-        var half_backwards = false;
+        var half_backwards = true;
 
         var centerDestroy = true;
         var centerDist = 9;
@@ -27,7 +27,7 @@
 
         
         function setup() {
-            createCanvas(min(2000,windowWidth-20),min(1000,windowHeight-20),WEBGL);
+            createCanvas(min(2000,windowWidth-1),min(1000,windowHeight-1));
 			noStroke();
             colorMode(HSL, 360);
             setChosenColors(3, 2, 2, 2, 3, 3);

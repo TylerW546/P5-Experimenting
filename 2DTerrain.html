@@ -3,49 +3,94 @@
 
 <head>
 	<title>Terrain Generator</title>
+	<style>
+		html, body {
+			padding:0px;
+			margin:0px;
+			max-width: 100%;
+			overflow-x: hidden;
+			max-height: 100%;
+			overflow-y: hidden;
+			background-color: #4040ff;
+		}
+	</style>
 </head>
 
 <body>
 	<script src="p5.js"></script>
 	<script src="sketch.js"></script>
+	
 	<script type="text/javascript">
-		var HEIGHT = 1000;
-		var WIDTH = 1500;
+		var HEIGHT;
+		var WIDTH;
 
-		var terrainValues = [];
+		var terrain_values = [];
+		var layers = 4;
+		var widthPerLayer = 200;
 
+		var new_terrain_values = [];
+		
+		var animating = false;
+		var animationVal=1;
+		var animatable = false;
 
-		var layers = 5;
-		var widthPerLayer = 400;
+		function mouseClicked() {
+			if (animatable && !animating)
+				regenerate();
+			//window.location.reload();
+		}
 
-		function setup() {
-			createCanvas(WIDTH, HEIGHT);
-			angleMode(DEGREES);
+		function doubleClicked() {
+			window.location.reload();
+		}
 
-			for (var y = 0; y < layers; y++) {
+		function getTerrain() {
+			var terrain_gen = [];
+			for (var y = 1; y <= layers; y++) {
 				noiseSeed();
-				terrainValues.push([]);
-				for (var x = 0; x < widthPerLayer; x++) {
-					var xFraction = x / widthPerLayer * 2000
+				terrain_gen.push([]);
+				for (var x = 0; x < widthPerLayer+1; x++) {
+					var xFraction = x / widthPerLayer * 2000;
 					var noiseVal =
-						noise(xFraction * (1)) * .03 +
-						noise(xFraction * (1 / 300)) * 1 +
-						noise(xFraction * (1 / 150)) * .5 +
-						noise(xFraction * (1 / 75)) * .25;// +
+						noise(xFraction * (.5)) * .03 +
+						noise(xFraction * (.5 / 300)) * 1 +
+						noise(xFraction * (.5 / 150)) * .5 +
+						noise(xFraction * (.5 / 75)) * .25;// +
 					//noise(xFraction * (1 / 37.5)) * .125;
 					noiseVal /= 1.78;
 
 
 					var max = y * 120 + 200;
 					var min = y * 50 - 50;//y*40;
-					terrainValues[y].push(HEIGHT - ((noiseVal) * (max - min) + min));
+					terrain_gen[y-1].push(HEIGHT - ((noiseVal) * (max - min) + min));
 				}
 			}
+			return terrain_gen;
+		}
+		
+
+		function setup() {
+			WIDTH = windowWidth;
+			HEIGHT = windowHeight;
+			createCanvas(WIDTH, HEIGHT);
+			angleMode(DEGREES);
+			noLoop();
+			frameRate(30);
+
+			terrain_values = getTerrain();
+		}
+
+		function regenerate() {
+			new_terrain_values = getTerrain();
+			loop();
+			animating = true;
+			animationVal = 0;
+			draw();
 		}
 
 		function draw() {
 			background(0);
-			setGradient(0, 0, WIDTH, HEIGHT, color(50, 50, 255), color(200, 100, 50), "Y")
+			setGradient(0, 0, WIDTH, HEIGHT, color(50, 50, 255), color(200, 100, 50), "Y",10)
 
 			noStroke();
 
@@ -58,30 +103,53 @@
 
 			//translate(-units*tileSize/2, 0, -units*tileSize/2);
 			//rotateX(90);
+			if (!animating) {
+				for (var y = layers - 1; y >= 0; y--) {
+					beginShape();
+					//shininess(15);
+					//specularMaterial(250);
+					fill(0, 0, 150 * ((y+1) / layers) + 55);
 
-			for (var y = layers - 1; y >= 0; y--) {
-				console.log(y);
-				beginShape();
-				//shininess(15);
-				//specularMaterial(250);
-				fill(0, 0, 150 * (y / layers) + 55);
-
-				for (var x = 0; x < widthPerLayer; x++) {
-					vertex(x * width / widthPerLayer, terrainValues[y][x]);
+					for (var x = 0; x < widthPerLayer+1; x++) {
+						vertex(x * WIDTH / widthPerLayer, terrain_values[y][x]);
+					}
+					vertex(WIDTH, HEIGHT);
+					vertex(0, HEIGHT);
+					endShape();
 				}
-				vertex(width, height);
-				vertex(0, height);
-				endShape();
-			}
+			} else {
+				for (var y = layers - 1; y >= 0; y--) {
+					beginShape();
+					//shininess(15);
+					//specularMaterial(250);
+					fill(0, 0, 150 *  ((y+1) / layers) + 55);
 
+					for (var x = 0; x < widthPerLayer+1; x++) {
+						vertex(x * WIDTH / widthPerLayer, (map(animationVal, 0, 100, terrain_values[y][x], new_terrain_values[y][x])));
+					}
+					vertex(WIDTH, HEIGHT);
+					vertex(0, HEIGHT);
+					endShape();
+				}
+				animationVal++;
+				setTimeout(function() {}, 2000);
+				if (animationVal > 100) {
+					noLoop();
+					animating = false;
+					terrain_values = new_terrain_values;
+					new_terrain_values = [];
+					draw();
+				}
+			}
 		}
 
-		function setGradient(x, y, w, h, c1, c2, axis) {
+		function setGradient(x, y, w, h, c1, c2, axis,stroke_width) {
 			noFill();
 			if (axis == "Y") {  // Top to bottom gradient
-				for (let i = y; i <= y + h; i++) {
+				for (let i = y; i <= y + h+stroke_width; i+=stroke_width) {
 					var inter = map(i, y, y + h, 0, 1);
 					var c = lerpColor(c1, c2, inter);
+					strokeWeight(stroke_width);
 					stroke(c);
 					line(x, i, x + w, i);
 				}

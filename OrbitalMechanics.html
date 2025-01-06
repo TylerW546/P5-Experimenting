@@ -26,7 +26,7 @@
         // 0 = None
         // 1 = Elastic
         // 2 = Combine
-        var collisionType = 1;
+        var collisionType = 2;
 
         var viewObject = 0;
         var viewObjectCooldown = 0;
@@ -42,7 +42,7 @@
 			angleMode(DEGREES);
             colorMode(HSL, 360);
             perspective(60, 2, .1, 8000000);
-
+            
             frameRate(60);
             cam = createCamera();
             prevCam = createVector();
@@ -77,16 +77,16 @@
             // new Satellite(-80,0,0,m=1e-8,r=40,dx=3,dy=0,dz=0);
             // new Satellite(80,0,0,m=1e-20,r=40,dx=1,dy=0,dz=0);
 
-            //Radial 50 and v5 is cool
-            new Satellite(0,0,0,m=1e4,r=45,dx=0,dy=0,dz=0);
-            var v = 5;
-            var rad=50;
-            for (var a = 0; a<360; a+=60) {
-                for (var h=-20;h<=20;h+=10) {
-                    new Satellite(rad*sin(a+map(h,-20,20,0,30)),h,rad*cos(a+map(h,-20,20,0,30)),
-                                  m=1e-10,r=15,dx=v*sin(a+90),dy=0,dz=v*cos(a+90),random(5)-2);
-                }
-            }
+            // //Radial 50 and v5 is cool
+            // new Satellite(0,0,0,m=1e4,r=45,dx=0,dy=0,dz=0);
+            // var v = 5;
+            // var rad=50;
+            // for (var a = 0; a<360; a+=60) {
+            //     for (var h=-20;h<=20;h+=10) {
+            //         new Satellite(rad*sin(a+map(h,-20,20,0,30)),h,rad*cos(a+map(h,-20,20,0,30)),
+            //                       m=1e-10,r=15,dx=v*sin(a+90),dy=0,dz=v*cos(a+90),random(5)-2);
+            //     }
+            // }
 
             // new Satellite(0,0,0,m=1e2,r=45,dx=0,dy=0,dz=0);
             // var v = 5;
@@ -112,7 +112,7 @@
             // // Klemperer Rosette
             // var radius = 50;
             // var ve = 35.748806138;
-            // for (var a = 0; a<360; a+=360/4) {
+            // for (var a = 0; a<360; a+=360/5) {
             //     new Satellite(radius*cos(a),0,radius*sin(a),m=2e3,r=0,dx=ve*cos(a+90),dy=0,dz=ve*sin(a+90));
             // }
 
@@ -130,15 +130,15 @@
             // }
             
 
-            // // Random Positions
-            // var count = 100;
-            // var boxDim = 2000;
-            // var speedMax = 2;
-            // for (var i = 0; i< count; i++) {
-            //     new Satellite(x=random(-boxDim,boxDim),y=random(-boxDim,boxDim),z=random(-boxDim,boxDim),
-            //                     m=random(10,1e7),r=0,
-            //                     dx=random(-speedMax,speedMax),dy=random(-speedMax,speedMax),dz=random(-speedMax,speedMax));
-            // }
+            // Random Positions
+            var count = 200;
+            var boxDim = 1000;
+            var speedMax = 3;
+            for (var i = 0; i< count; i++) {
+                new Satellite(x=random(-boxDim,boxDim),y=random(-boxDim,boxDim),z=random(-boxDim,boxDim),
+                                m=random(10,1e7),r=0,
+                                dx=random(-speedMax,speedMax),dy=random(-speedMax,speedMax),dz=random(-speedMax,speedMax));
+            }
 
             initialCOM = getCOM(Satellite.allObjects);
             initialVCOM = getVCOM(Satellite.allObjects);
@@ -146,7 +146,7 @@
 		}
 
         function randomColor() {
-            return color(random(360),100,100);
+            return color(random(360),200,250);
         }
 
         function getMaxMassBody(list) {
@@ -263,7 +263,7 @@
 
                 this.charge = chrg;
 
-                var density = .01;
+                var density = 1;
                 if (r == 0) {
                     this.radius = Math.cbrt(3*m/(4*3.1415926*density));
                 }
@@ -273,13 +273,13 @@
                 }
                 this.color = c;
 
-                if (this.charge > 0) {
-                    this.color = color(0,360,180);
-                } else if (this.charge < 0) {
-                    this.color = color(246,360,180);
-                } else {
-                    this.color = color(360,360,360);
-                }
+                // if (this.charge > 0) {
+                //     this.color = color(0,360,180);
+                // } else if (this.charge < 0) {
+                //     this.color = color(246,360,180);
+                // } else {
+                //     this.color = color(360,360,360);
+                // }
 
                 this.positions = [];
 
@@ -480,9 +480,9 @@
 			strokeWeight(0.5);
 
             //noStroke();
-
 		
 			lights();
+            
 			directionalLight(128, 128, 128, -1, -1, -1);
 			
 			
@@ -543,13 +543,12 @@
             posCOM = getCOM(Satellite.allObjects);
             if (posCOM) {
                 renderSphere(posCOM);
-                
             }
             
             
             
             if (keyIsDown(ENTER)) {
-                updateViewObject(Satellite.allObjects);
+                //updateViewObject(Satellite.allObjects);
             }
             if (viewObjectCooldown > 0) {
                 viewObjectCooldown--;
@@ -558,11 +557,11 @@
 
             //normalizeView(getMaxMassBody(Satellite.allObjects).pos);
             //normalizeView(cam, posCOM);
-            normalizeView(cam, viewObject.pos);
+            //normalizeView(cam, viewObject.pos);
 
-            if (mouseIsPressed) {
+            //if (mouseIsPressed) {
                 orbitControl();
-            }
+            //}
             
 
             //console.log(p5.Vector.sub(initialVCOM, getVCOM(Satellite.allObjects)).mag());

@@ -61,7 +61,8 @@
 		var angle;
 		var prev_angle;
 
-		var turning = true;
+		var turning = false;
+		var angle_per_tick;
 
 
 		var modu = 1;
@@ -74,6 +75,7 @@
 			
             frameRate(60);
 
+			angle_per_tick = 3.1415926/16/16/2;
 			angle = 0;
 			
 			//shape = new Gear(24*(16*(4)+2),1,1,24,3);
@@ -91,11 +93,45 @@
 			var e2 = .25;
 			
 			//gear4 = new Gear(points_per_sec,2,createVector(2*r2+2*r3+r4,0,0),r4,t4,t3,8*e1/modu,8*e2/modu,1,[],SimpleCircle, {"r1":.1});
-			gear3 = new Gear(points_per_sec,2,createVector(2*r2+r3,0,0),t3,t2,2*e1/modu,2*e2/modu,1,[],SpiralSpokes, {"n":8, "r1":.1, "r2":.2, "r3":.8,"w":.05, "scalar":.3,"second":1.87});
-			gear2_5 = new Gear(points_per_sec,2,createVector(r2,-r2*2,0),t2,t1,2*e1/modu,2*e2/modu,1,[],ManyCircles, {"n":5, "r2": .6, "r3":.15});
-			gear2 = new Gear(points_per_sec,2,createVector(r2,0,0),t2,t1,2*e1/modu,2*e2/modu,-1,[gear3,gear2_5],ManyCircles, {"n":5, "r2": .6, "r3":.15});
-			gear =  new Gear(points_per_sec,2,createVector(-r1,0,0),t1,t2,e1/modu,e2/modu,1,[gear2],Spokes,{"n":5, "r1":.1, "r2": .2, "r3" : .8,"w":.05});
-			gear.Turn(gear.extra_spacing/4,false);
+			// var gearCreation = [
+			// 	[]
+			// ]
+			
+			// gear =  new Gear(points_per_sec,2,createVector(-r1,0,0),t1,t2,1,null,Spokes,{"n":5, "r1":.1, "r2": .2, "r3" : .8,"w":.05});
+			// gear2 = new Gear(points_per_sec,2,createVector(r2,0,0),t2,t1,-1,gear,ManyCircles, {"n":5, "r2": .6, "r3":.15});
+			// gear2_5 = new Gear(points_per_sec,2,createVector(r2,-r2*2,0),t2,t1,1,gear2,ManyCircles, {"n":5, "r2": .6, "r3":.15});
+			// gear3 = new Gear(points_per_sec,2,createVector(2*r2+r3,0,0),t3,t2,1,gear2,SpiralSpokes, {"n":8, "r1":.1, "r2":.2, "r3":.8,"w":.05, "scalar":.3,"second":1.87});
+
+			// Parent, Angle, Teeth
+			data = [{"p": null,"a": 0,"t": 15},
+					{"p": 0,"a": 0,"t": 15},
+					{"p": 1,"a": 0,"t": 10},
+					// {"p": 1,"a": 0,"t": 12},
+					// {"p": 2,"a": -PI/2,"t": 12},
+					// {"p": 2,"a":PI/3,"t":8},
+					// {"p": 0,"a":-PI/3,"t":16},
+					// // {"p": 5,"a":0,"t":8},
+					// {"p": 0,"a":PI/2+PI/6,"t":12}
+			]
+			new TrainAssembler(data);
+
+			for (var i=0; i<Gear.gears.length; i++) {
+				if (i%3==0)
+					Gear.gears[i].interior = new Spokes(Gear.gears[i], {"n":5, "r1":.1, "r2": .2, "r3" : .8,"w":.05});
+				if (i%3==1)
+					Gear.gears[i].interior = new ManyCircles(Gear.gears[i], {"n":5, "r2": .6, "r3":.15});
+				if (i%3==2)
+					Gear.gears[i].interior = new SpiralSpokes(Gear.gears[i], {"n":8, "r1":.1, "r2":.2, "r3":.8,"w":.05, "scalar":.3,"second":1.87});
+			}
+
+			Gear.gears[0].Turn(2*Gear.gears[0].extra_spacing/3,false);
+			Gear.gears[0].DrivingCorrection();
+
+			for (var i=0; i<Gear.gears.length; i++) {
+				console.log(Gear.gears[i]);
+			}
+
+			
 
 			
 			if (!fill_shapes) noFill();
@@ -142,10 +178,15 @@
 
 			orbitControl();
 			
-			// beginShape(LINES);
-			// 	vertex(-1000,0,0);
-			// 	vertex(1000,0,0);
-			// endShape();
+			beginShape(LINES);
+				vertex(-1000,0,0);
+				vertex(1000,0,0);
+			endShape();
+
+			beginShape(LINES);
+				vertex(-1000*cos(-PI/3),-1000*sin(-PI/3),0);
+				vertex(1000*cos(-PI/3),1000*sin(-PI/3),0);
+			endShape();
 
 			//Structure.focused.Draw();
 			for (let i=0; i<Gear.gears.length; i++) {
@@ -160,16 +201,17 @@
 			}
 
 			prev_angle = angle;
-			angle = prev_angle + PI/16/16/2;
+			angle = prev_angle + angle_per_tick;
 
 			if (!keyIsDown(ENTER) && turning)
-				gear.Turn(angle-prev_angle);
+				Gear.gears[0].Turn(angle-prev_angle);
 
 			stroke(122,100,50);
 			strokeWeight(4);
 			beginShape(POINTS);
 			vertex(0,0,0);
 			endShape();
+
 		}
 
 		function generateCircle(x,y,r,p,d_in=false) {
@@ -317,6 +359,7 @@
 					vertex(this.shape_[i][slice].x, this.shape_[i][slice].y, this.shape_[i][slice].z);
 					vertex(this.shape_[i+1][slice].x, this.shape_[i+1][slice].y, this.shape_[i+1][slice].z);
 				}
+				//console.log(this.shape_);
 				vertex(this.shape_[this.rows_-1][slice].x, this.shape_[this.rows_-1][slice].y, this.shape_[this.rows_-1][slice].z);
 				vertex(this.shape_[0][slice].x, this.shape_[0][slice].y, this.shape_[0][slice].z);
 				endShape();
@@ -349,7 +392,7 @@
 		class Gear extends Structure {
 			static gears = [];
 
-			constructor(points_per_section, cols, center_point, T1, T2, end1, end2, clockwise, children=[], interiorType=null, args={}) {
+			constructor(points_per_section, cols, center_point, T1, T2, clockwise, parent=null, interiorType=null, args={}) {
 				var rows = T1*(4*points_per_section+2);
 				super(rows, cols, center_point, scalar, false);
 
@@ -365,44 +408,48 @@
 
 				this.center_point = center_point;
 
-				this.children = children;
-				for (var i=0; i<this.children.length; i++) {
-					this.CorrectMeshing(this.children[i]);
-					this.children[i].Turn(-1*this.children[i].clockwise*this.extra_spacing);
-				}
+				// this.children = children;
+				// for (var i=0; i<this.children.length; i++) {
+				// 	this.CorrectMeshing(this.children[i]);
+				// 	this.children[i].Turn(-1*this.children[i].clockwise*this.extra_spacing);
+				// }
+				this.children = [];
+				this.parent = parent;
+				if (this.parent)
+					this.parent.children.push(this);
 				
 				
 				this.r = modu*this.teeth;
 				//this.other_r = T2/modu;
 				this.other_teeth = T2;
 
-				this.end1 = end1;
-				this.end2 = end2;
+				this.base = this.r-1;
+				this.addendum = this.r+1;
 
-				
+				this.end1 = this.TGivenR(this.addendum,this.r,4.2*modu);
+				this.end2 = this.TGivenR(this.base,this.r,-4.2*modu);
 
 				this.clockwise = clockwise;
 				this.angle = 0;
 				
-
-				
-
 				this.CreateShape();
-
-				// Base Circle
-				var point = this.DefineCoordinates(0,0);
-				var r2 = sqrt(Math.pow(point[0].x,2),Math.pow(point[0].y,2));
-				this.base = r2;
-
-				// Addendum
-				var point2 = this.DefineCoordinates(1/(2*this.teeth),0);
-				var r3 = sqrt(Math.pow(point2[0].x,2),Math.pow(point2[0].y,2));
-				this.addendum = r3;
 
 				Gear.gears.push(this);
 
+				this.interior = null;
 				if (interiorType)
 					this.interior = new interiorType(this, args);
+			}
+
+			DrivingCorrection() {
+				//this.Turn(this.clockwise*this.extra_spacing);
+					
+				if (this.children) {
+					for (var i=0; i<this.children.length; i++) {
+						this.CorrectMeshing(this.children[i]);
+						this.children[i].DrivingCorrection();
+					}
+				}
 			}
 
 			CorrectMeshing(other) {
@@ -422,11 +469,12 @@
 
 				other.Turn(angle_of_meshing+PI);
 				other.Turn(-PI/other.teeth);
-				other.Turn((angle_of_meshing-this.teeth_spaces[i])*this.teeth/other.teeth)
+				other.Turn(other.clockwise*(angle_of_meshing-this.teeth_spaces[i])*this.teeth/other.teeth)
+				
 			}
 
 			Turn(angle, propogate = true) {
-				this.angle = (this.angle+angle);
+				this.angle = (this.angle+angle)%(2*PI);
 				if (this.children && propogate) {
 					for (let i=0; i<this.children.length; i++) 
 						this.children[i].Turn(-angle*this.teeth/this.children[i].teeth);
@@ -451,6 +499,10 @@
 					this.interior.draw();
 				//generateCircle(this.scl_*this.global_position.x,this.scl_*this.global_position.y,this.scl_*(this.base*.85),128);
 				//generateArc((this.global_position.x-this.r/2)*this.scl_, (this.global_position.y+0)*this.scl_, this.r/2*this.scl_, 32, -PI/2, PI/2);
+			}
+
+			TGivenR(R, R1, R2) {
+				return R2/R1*Math.acos((Math.pow(R,2)-Math.pow(R1,2)-2*R2*R1-2*Math.pow(R2,2))/(-2*R2*(R1+R2)));
 			}
 			
 			DefineCoordinates(v, u) {
@@ -615,6 +667,24 @@
 				}
 				this.points.push(generateCircle(0,0,
 								this.parent.scl_*this.args.r1*this.parent.base, 64));
+			}
+		}
+
+		class TrainAssembler {
+			constructor(data) {
+				for (var i=0; i<data.length; i++) {
+					var position = createVector(0,0,0);
+					var clockwise = 1;
+					var parentGear = null;
+					if (data[i].p != null) {
+						parentGear = Gear.gears[data[i].p];
+						console.log("parent"+parentGear.center_point);
+						position = p5.Vector.add(parentGear.center_point, p5.Vector.mult(createVector(cos(data[i].a),sin(-data[i].a),0),(parentGear.r+data[i].t*modu)));
+						clockwise = clockwise * parentGear.clockwise;
+					}
+
+					new Gear(16,2,position,data[i].t,1,clockwise,parentGear);
+				}
 			}
 		}
 

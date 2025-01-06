@@ -894,12 +894,12 @@
             new Template("Spaced Small Perlin Squiggles", 6, [perlin, { "row_scaling": .005, "col_scaling": .005 }], [], slinky_worker, [[slinkySettings, { "addition_values": [PI / 4, PI / 2, 3, 5] }], [numCurves, { 'num': 4000 }], [deathChecks, { 'collision': true }], thicknesses[1], [noInstantDeath, {}]]);
             new Template("Spaced Large Perlin Slinkies", 10, [perlin, { "row_scaling": .005, "col_scaling": .005 }], [], slinky_worker, [[slinkySettings, { "addition_values": [PI / 32, PI / 16, .2, .4] }], [thickness, { 'min': 2, 'max': 4 }], [numCurves, { 'num': 4000 }], [deathChecks, { 'collision': true }], thicknesses[1], [noInstantDeath, {}]]);
 
-            // new Template("Velocities", 5,  [perlin, {"row_scaling" : .005, "col_scaling" : .005}], [], velocity_worker,  [[backTraverse, {'on' : false}]])
-            // new Template("U-Shaped Velocities", 5,  [perlin, {"row_scaling" : .005, "col_scaling" : .005}], [], velocity_worker, [])
-            // new Template("Circles vs. Squiggles", 15,  [perlin, {"row_scaling" : .005, "col_scaling" : .005}], [], turning_worker, [[backTraverse, {'on' : false}]])
-            // new Template("Circles vs. Squiggles", 5,  [rModifiedPerlin, {"row_scaling" : .005, "col_scaling" : .005}], [], turning_worker, [[backTraverse, {'on' : false}]])
-            // new Template("Quadrant Separated Circles vs. Squiggles", 2,  [circles, {}], [], turning_worker, [[backTraverse, {'on' : false}]])
-            // new Template("Circular Circles vs. Squiggles", 15, [thetaPerlin, {"theta_multiplier" : .005, "r_multiplier" : .025}] , [], turning_worker, [[backTraverse, {'on' : false}]])
+            new Template("Velocities", 5,  [perlin, {"row_scaling" : .005, "col_scaling" : .005}], [], velocity_worker,  [[backTraverse, {'on' : false}]])
+            new Template("U-Shaped Velocities", 5,  [perlin, {"row_scaling" : .005, "col_scaling" : .005}], [], velocity_worker, [])
+            new Template("Circles vs. Squiggles", 15,  [perlin, {"row_scaling" : .005, "col_scaling" : .005}], [], turning_worker, [[backTraverse, {'on' : false}]])
+            new Template("Circles vs. Squiggles", 5,  [rModifiedPerlin, {"row_scaling" : .005, "col_scaling" : .005}], [], turning_worker, [[backTraverse, {'on' : false}]])
+            new Template("Quadrant Separated Circles vs. Squiggles", 2,  [circles, {}], [], turning_worker, [[backTraverse, {'on' : false}]])
+            new Template("Circular Circles vs. Squiggles", 15, [thetaPerlin, {"theta_multiplier" : .005, "r_multiplier" : .025}] , [], turning_worker, [[backTraverse, {'on' : false}]])
 
             background_color = new Color(0, 0, 0);
 
